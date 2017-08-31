@@ -1,5 +1,5 @@
 export class App {
     constructor() {
-        this.message = 'Under construction...';
+        this.message = 'I\'m working on it...';
     }
 }
