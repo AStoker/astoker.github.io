@@ -16,7 +16,7 @@ function startBrowser(done) {
         logLevel: 'verbose',
         server: {
             baseDir: [project.platform.baseDir],
-            index: 'index.es6.html', //runAsES6 ? 'index.es6.html' : 'index.html',
+            index: runAsES6 ? 'index.es6.html' : 'index.html',
             middleware: [historyApiFallback(), function(req, res, next) {
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 next();
