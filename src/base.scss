@@ -6,44 +6,55 @@ body {
     margin: 0;
 }
 
-.display-text {
+.construction-text {
     font-family: 'Libre Barcode 39 Text', cursive;
+    font-size: 4rem;
+    position: absolute;
+    width: 100vw;
+    text-align: center;
+    z-index: 99;
 }
-.under-construction {
+.backdrop {
     position: absolute;
     width: 100vw;
     height: 100vh;
     text-align: center;
     font-weight: 100;
     
-    background: linear-gradient(139deg, #77a3bb, #9ea1d5, #95c8b7, #77bbb9);
-    background-size: 800% 800%;
+    background-image: url('images/Background.jpg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    filter: opacity(.5);
+
+    // background: linear-gradient(139deg, #77a3bb, #9ea1d5, #95c8b7, #77bbb9);
+    // background-size: 800% 800%;
     
-    -webkit-animation: CSSGradiantAnimation 43s ease infinite;
-    -moz-animation: CSSGradiantAnimation 43s ease infinite;
-    animation: CSSGradiantAnimation 43s ease infinite;
+    // -webkit-animation: CSSGradiantAnimation 43s ease infinite;
+    // -moz-animation: CSSGradiantAnimation 43s ease infinite;
+    // animation: CSSGradiantAnimation 43s ease infinite;
 
-    h1 {
-        font-size: 4rem;
-    }
-    h1, h2, h3, h4, h5, h6 {
-        font-weight: inherit;
-    }
+    // h1 {
+    //     font-size: 4rem;
+    // }
+    // h1, h2, h3, h4, h5, h6 {
+    //     font-weight: inherit;
+    // }
 }
 
 
-@-webkit-keyframes CSSGradiantAnimation {
-    0%{background-position:50% 0%}
-    50%{background-position:50% 100%}
-    100%{background-position:50% 0%}
-}
-@-moz-keyframes CSSGradiantAnimation {
-    0%{background-position:50% 0%}
-    50%{background-position:50% 100%}
-    100%{background-position:50% 0%}
-}
-@keyframes CSSGradiantAnimation { 
-    0%{background-position:50% 0%}
-    50%{background-position:50% 100%}
-    100%{background-position:50% 0%}
-}
+// @-webkit-keyframes CSSGradiantAnimation {
+//     0%{background-position:50% 0%}
+//     50%{background-position:50% 100%}
+//     100%{background-position:50% 0%}
+// }
+// @-moz-keyframes CSSGradiantAnimation {
+//     0%{background-position:50% 0%}
+//     50%{background-position:50% 100%}
+//     100%{background-position:50% 0%}
+// }
+// @keyframes CSSGradiantAnimation { 
+//     0%{background-position:50% 0%}
+//     50%{background-position:50% 100%}
+//     100%{background-position:50% 0%}
+// }

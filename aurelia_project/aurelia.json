@@ -1,6 +1,7 @@
 {
   "name": "astoker.github.io",
   "type": "project:application",
+  "packageManager": "yarn",
   "bundler": {
     "id": "cli",
     "displayName": "Aurelia-CLI"
