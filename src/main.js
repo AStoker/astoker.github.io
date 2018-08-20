@@ -19,9 +19,11 @@ export function configure(aurelia) {
 }
 
 function logWelcomeMessage() {
-  console.log('Curious one, aren\'t you?');
-  console.log('"Under Construction" is a very loose term right now.');
-  console.log('Hit me up over on GitHub (https://github.com/AStoker) if you need anything.');
-  console.log('Party on dudes!');
-  console.log('https://youtu.be/rph_1DODXDU');
+  console.log(
+    '%cCurious one, aren\'t you?\n'
+    + '"Under Construction" is a very loose term right now.\n'
+    + 'Hit me up over on GitHub (https://github.com/AStoker) if you need anything.\n'
+    + 'Party on dudes!\n'
+    + 'https://youtu.be/rph_1DODXDU',
+    'background: rgb(220, 162, 110); color:rgb(57, 64, 88)');
 }
