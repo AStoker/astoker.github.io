@@ -1,31 +1,33 @@
-@import url('https://fonts.googleapis.com/css?family=Libre+Barcode+39+Text|Open+Sans');
+@import url('https://fonts.googleapis.com/css?family=Expletus+Sans|Poiret+One');
 
 body {
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'Poiret One', sans-serif;
     padding: 0;
     margin: 0;
 }
 
 .construction-text {
-    font-family: 'Libre Barcode 39 Text', cursive;
-    font-size: 4rem;
+    // font-family: 'Expletus Sans';
+    font-size: 6rem;
     position: absolute;
     width: 100vw;
     text-align: center;
     z-index: 99;
 }
-.backdrop {
+.diagonal-slice {
     position: absolute;
     width: 100vw;
-    height: 100vh;
-    text-align: center;
-    font-weight: 100;
+    height: 60vh;
+    background: linear-gradient(193deg, rgba(255, 255, 255, 0.5) 50%, transparent 50%);
+}
+.backdrop {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    overflow: hidden;
     
-    background-image: url('images/Background.jpg');
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    filter: opacity(.5);
 
     // background: linear-gradient(139deg, #77a3bb, #9ea1d5, #95c8b7, #77bbb9);
     // background-size: 800% 800%;
@@ -40,6 +42,18 @@ body {
     // h1, h2, h3, h4, h5, h6 {
     //     font-weight: inherit;
     // }
+    .backdrop-image {
+        width: calc(100% + 15px);
+        height: calc(100% + 15px);
+        position: relative;
+        left: -8px;
+        top: -8px;
+        background-image: url('images/Background.jpg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        filter: opacity(.9) blur(2px);
+    }
 }
 
 
