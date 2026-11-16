@@ -1,6 +1,8 @@
 <script setup>
 import SectionHead from './SectionHead.vue'
-import { about } from '../content.js'
+import StacheFamily from './StacheFamily.vue'
+import { about, family } from '../content.js'
+import { heroOption } from '../composables/heroOption.js'
 </script>
 
 <template>
@@ -10,7 +12,7 @@ import { about } from '../content.js'
 		<div class="about-grid">
 			<p class="statement">{{ about.statement }}</p>
 			<div>
-				<p class="body">{{ about.body }}</p>
+				<p v-for="paragraph in about.body" :key="paragraph" class="body">{{ paragraph }}</p>
 				<dl class="facts">
 					<div v-for="fact in about.facts" :key="fact.label" class="fact">
 						<dt>{{ fact.label }}</dt>
@@ -19,13 +21,20 @@ import { about } from '../content.js'
 				</dl>
 			</div>
 		</div>
+
+		<!-- TEMPORARY condition: the portrait-wall hero already shows the family up top -->
+		<div v-if="heroOption !== 'wall'" class="family-block">
+			<h3 class="family-title">{{ family.title }}</h3>
+			<p class="family-intro">{{ family.intro }}</p>
+			<StacheFamily layout="row" />
+		</div>
 	</section>
 </template>
 
 <style scoped>
 .about-grid {
 	display: grid;
-	grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
 	gap: clamp(28px, 6vw, 96px);
 	align-items: start;
 }
@@ -33,22 +42,26 @@ import { about } from '../content.js'
 .statement {
 	margin: 0;
 	font-family: var(--font-display);
-	font-size: clamp(1.9rem, 4vw, 3.1rem);
+	font-size: clamp(2rem, 4.4vw, 3.4rem);
 	font-weight: 420;
-	line-height: 1.12;
+	line-height: 1.1;
 	letter-spacing: -0.02em;
 	font-variation-settings: 'SOFT' 100, 'WONK' 0, 'opsz' 96;
 	text-wrap: balance;
 }
 
 .body {
-	margin: 0 0 28px;
+	margin: 0 0 1em;
 	font-size: 1.1rem;
 	color: var(--ink-soft);
 }
 
+.body:first-child {
+	color: var(--ink);
+}
+
 .facts {
-	margin: 0;
+	margin: 28px 0 0;
 	border-top: 1px solid var(--rule);
 }
 
@@ -72,6 +85,25 @@ import { about } from '../content.js'
 	margin: 0;
 	font-weight: 600;
 	text-align: right;
+}
+
+.family-block {
+	margin-top: clamp(56px, 8vw, 96px);
+}
+
+.family-title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: clamp(1.6rem, 3vw, 2.2rem);
+	font-weight: 560;
+	letter-spacing: -0.02em;
+	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 96;
+}
+
+.family-intro {
+	max-width: 58ch;
+	margin: 10px 0 28px;
+	color: var(--ink-soft);
 }
 
 @media (max-width: 760px) {

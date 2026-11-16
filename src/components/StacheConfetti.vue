@@ -1,9 +1,10 @@
 <script setup>
-// A shower of mustaches when the last one is found.
+// A shower of mustaches, every kind there is, when the last cousin is found.
 import { ref, watch } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
 import { reducedMotion } from '../composables/media.js'
+import { KINDS } from '../assets/mustaches.js'
 
 const { state } = useStacheHunt()
 const pieces = ref([])
@@ -13,8 +14,9 @@ watch(
 	(on) => {
 		if (!on || reducedMotion.value) return
 		const batch = Date.now()
-		pieces.value = Array.from({ length: 42 }, (_, i) => ({
+		pieces.value = Array.from({ length: 48 }, (_, i) => ({
 			id: `${batch}-${i}`,
+			kind: KINDS[i % KINDS.length], // an even mix of every kind
 			left: Math.random() * 100,
 			size: 26 + Math.random() * 34,
 			delay: Math.random() * 700,
@@ -35,6 +37,7 @@ watch(
 			:key="p.id"
 			class="piece"
 			:class="{ red: p.red }"
+			:kind="p.kind"
 			:style="{
 				left: `${p.left}%`,
 				width: `${p.size}px`,

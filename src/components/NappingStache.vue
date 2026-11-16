@@ -1,5 +1,6 @@
 <script setup>
-// A mustache asleep on the footer. Waking it up counts as finding it.
+// A cousin asleep on the footer. It's always there, in plain sight:
+// waking it up (a click or tap) counts as finding it.
 import { ref, computed } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
@@ -9,9 +10,12 @@ const props = defineProps({
 })
 
 const hunt = useStacheHunt()
+const cousin = hunt.cousin(props.id)
 const found = computed(() => hunt.isFound(props.id))
 const label = computed(() =>
-	found.value ? 'A sleeping mustache you already found. Click to wake it.' : 'A sleeping mustache. Click to wake it up.',
+	found.value
+		? `${cousin.name}, asleep. You already found this one. Click to wake it anyway.`
+		: 'Someone is asleep here. Click to wake them up.',
 )
 
 const mood = ref('sleep')
@@ -43,7 +47,7 @@ function wake() {
 <template>
 	<button class="napper" :class="{ asleep: mood === 'sleep' }" type="button" :aria-label="label" @click="wake">
 		<span class="zzz" aria-hidden="true"><span>z</span><span>z</span><span>z</span></span>
-		<StacheCharacter :mood="mood" :twirl="twirl" />
+		<StacheCharacter :kind="cousin.kind" :mood="mood" :twirl="twirl" />
 	</button>
 </template>
 
@@ -52,7 +56,7 @@ function wake() {
 	all: unset;
 	position: relative;
 	display: block;
-	width: 88px;
+	width: 112px;
 	cursor: pointer;
 	border-radius: 10px;
 	-webkit-tap-highlight-color: transparent;

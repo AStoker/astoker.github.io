@@ -4,27 +4,27 @@ import HidingStache from './HidingStache.vue'
 import { work } from '../content.js'
 
 const slots = Array.from({ length: work.slots }, (_, i) => String(i + 1).padStart(2, '0'))
-// Which empty frame the mustache hides behind.
+// Which empty frame the Handlebar hides behind.
 const HIDING_IN = '02'
 </script>
 
 <template>
 	<section id="work" class="section container" aria-labelledby="work-title">
 		<SectionHead id="work-title" num="01" :title="work.title">
-			<p>{{ work.emptyNote }}</p>
+			<p>{{ work.note }}</p>
 		</SectionHead>
 
 		<ul class="slots">
 			<li v-for="n in slots" :key="n">
 				<component
 					:is="n === HIDING_IN ? HidingStache : 'div'"
-					v-bind="n === HIDING_IN ? { id: 'work-slot', from: 'top', at: '68%', size: 132 } : {}"
+					v-bind="n === HIDING_IN ? { id: 'handlebar', from: 'top', at: '68%', size: 132 } : {}"
 					class="slot-wrap"
 				>
 					<div class="slot">
-						<span class="slot-label">Case study {{ n }}</span>
+						<span class="slot-label">{{ work.slotLabel }} {{ n }}</span>
 						<span class="slot-num" aria-hidden="true">{{ n }}</span>
-						<span class="slot-status">Coming soon</span>
+						<span class="slot-status">{{ work.slotStatus }}</span>
 					</div>
 				</component>
 			</li>
@@ -89,6 +89,7 @@ const HIDING_IN = '02'
 @media (max-width: 760px) {
 	.slots {
 		grid-template-columns: 1fr;
+		gap: 40px;
 	}
 
 	.slot {

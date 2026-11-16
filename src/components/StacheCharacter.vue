@@ -1,18 +1,47 @@
 <script setup>
 // The mustache character. Pure presentation: whoever uses it decides the mood,
 // when to twirl, and how it's rotated on screen. The eyes take care of themselves.
-import { ref, reactive, watch, onMounted, onBeforeUnmount } from 'vue'
-import { MUSTACHE_HALF } from '../assets/mustache.js'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { MUSTACHES } from '../assets/mustaches.js'
 import { usePointer } from '../composables/pointer.js'
 import { reducedMotion } from '../composables/media.js'
 
 const props = defineProps({
+	// Which mustache it wears: any kind from assets/mustaches.js
+	kind: { type: String, default: 'chevron' },
 	// idle | surprised | happy | sleep
 	mood: { type: String, default: 'idle' },
 	// How the character is rotated on screen (degrees), so a sideways one still looks at the cursor.
 	rotation: { type: Number, default: 0 },
 	// Bump this number to make the mustache twirl.
 	twirl: { type: Number, default: 0 },
+	// false draws the mustache on its own, with no eyes or brows.
+	eyes: { type: Boolean, default: true },
+	// 'standard' is the same box for every kind, so hiding spots line up.
+	// 'face' grows the box to show the whole face, however long the mustache.
+	fit: { type: String, default: 'standard' },
+})
+
+// Everyone gets their own eyebrows.
+const BROWS = {
+	chevron: { width: 2.6, d: ['M36 -19.5 Q45 -24 54 -20.5', 'M66 -20.5 Q75 -24 84 -19.5'] },
+	handlebar: { width: 2.2, d: ['M36 -20 Q44 -27 54 -22', 'M66 -22 Q76 -27 84 -20'] },
+	walrus: { width: 4.4, d: ['M35.5 -20.5 Q45 -23 54.5 -21', 'M65.5 -21 Q75 -23 84.5 -20.5'] },
+	horseshoe: { width: 3.2, d: ['M36 -23 L54 -19.8', 'M66 -19.8 L84 -23'] },
+	pencil: { width: 1.6, d: ['M37 -20.5 Q45 -25 53 -20.5', 'M67 -20.5 Q75 -25 83 -20.5'] },
+	dali: { width: 1.8, d: ['M36 -22 Q45 -28 54 -23.5', 'M66 -20.5 Q75 -24 84 -20'] },
+}
+
+const shape = computed(() => MUSTACHES[props.kind] ?? MUSTACHES.chevron)
+const brows = computed(() => BROWS[props.kind] ?? BROWS.chevron)
+
+const viewBox = computed(() => {
+	const [x, y, w, h] = shape.value.box
+	if (!props.eyes) return `${x - 2} ${y - 2} ${w + 4} ${h + 4}`
+	if (props.fit !== 'face') return '4 -28 112 56'
+	const halfWidth = Math.max(60 - x, 28) + 3
+	const bottom = Math.max(y + h, 22) + 3
+	return `${60 - halfWidth} -30 ${halfWidth * 2} ${bottom + 30}`
 })
 
 const EYES = [
@@ -34,7 +63,7 @@ let blinkTimer
 let twirlTimer
 let wander = { x: 0, y: 0, until: 0 }
 
-const eyesOpen = () => props.mood === 'idle' || props.mood === 'surprised'
+const eyesOpen = () => props.eyes && (props.mood === 'idle' || props.mood === 'surprised')
 
 function frame(now) {
 	raf = 0
@@ -130,35 +159,36 @@ onBeforeUnmount(() => {
 		ref="root"
 		class="stache"
 		:class="[`is-${mood}`, { blinking, twirling }]"
-		viewBox="4 -28 112 56"
+		:viewBox="viewBox"
 		aria-hidden="true"
 		focusable="false"
 	>
-		<template v-for="eye in EYES" :key="eye.x">
-			<g v-if="mood === 'idle' || mood === 'surprised'" class="eye-open">
-				<circle class="sclera" :cx="eye.x" :cy="eye.y" r="9.5" />
-				<circle
-					class="pupil"
-					:cx="eye.x + pupil.x"
-					:cy="eye.y + pupil.y"
-					:r="mood === 'surprised' ? 3 : 4.4"
+		<template v-if="eyes">
+			<template v-for="eye in EYES" :key="eye.x">
+				<g v-if="mood === 'idle' || mood === 'surprised'" class="eye-open">
+					<circle class="sclera" :cx="eye.x" :cy="eye.y" r="9.5" />
+					<circle
+						class="pupil"
+						:cx="eye.x + pupil.x"
+						:cy="eye.y + pupil.y"
+						:r="mood === 'surprised' ? 3 : 4.4"
+					/>
+					<circle class="glint" :cx="eye.x + pupil.x + 1.5" :cy="eye.y + pupil.y - 1.6" r="1.2" />
+				</g>
+				<!-- happy: ^ ^ -->
+				<path
+					v-else-if="mood === 'happy'"
+					class="line"
+					:d="`M${eye.x - 7} ${eye.y + 3} Q${eye.x} ${eye.y - 7} ${eye.x + 7} ${eye.y + 3}`"
 				/>
-				<circle class="glint" :cx="eye.x + pupil.x + 1.5" :cy="eye.y + pupil.y - 1.6" r="1.2" />
-			</g>
-			<!-- happy: ^ ^ -->
-			<path
-				v-else-if="mood === 'happy'"
-				class="line"
-				:d="`M${eye.x - 7} ${eye.y + 3} Q${eye.x} ${eye.y - 7} ${eye.x + 7} ${eye.y + 3}`"
-			/>
-			<!-- asleep: closed lids -->
-			<path v-else class="line" :d="`M${eye.x - 7} ${eye.y} Q${eye.x} ${eye.y + 5} ${eye.x + 7} ${eye.y}`" />
+				<!-- asleep: closed lids -->
+				<path v-else class="line" :d="`M${eye.x - 7} ${eye.y} Q${eye.x} ${eye.y + 5} ${eye.x + 7} ${eye.y}`" />
+			</template>
+			<path v-for="d in brows.d" :key="d" class="brow line" :d="d" :style="{ strokeWidth: brows.width }" />
 		</template>
-		<path class="brow line" d="M36 -19.5 Q45 -24 54 -20.5" />
-		<path class="brow line" d="M66 -20.5 Q75 -24 84 -19.5" />
 
-		<g class="half half-l"><path :d="MUSTACHE_HALF" transform="translate(120 0) scale(-1 1)" /></g>
-		<g class="half half-r"><path :d="MUSTACHE_HALF" /></g>
+		<g class="half half-l"><path :d="shape.half" transform="translate(120 0) scale(-1 1)" /></g>
+		<g class="half half-r"><path :d="shape.half" /></g>
 	</svg>
 </template>
 

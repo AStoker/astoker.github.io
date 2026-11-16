@@ -5,9 +5,10 @@ import WorkSection from './components/WorkSection.vue'
 import AboutSection from './components/AboutSection.vue'
 import ContactSection from './components/ContactSection.vue'
 import SiteFooter from './components/SiteFooter.vue'
-import EdgePeeker from './components/EdgePeeker.vue'
+import DwellPeeker from './components/DwellPeeker.vue'
 import HuntToast from './components/HuntToast.vue'
 import StacheConfetti from './components/StacheConfetti.vue'
+import OptionSwitcher from './components/OptionSwitcher.vue'
 </script>
 
 <template>
@@ -21,7 +22,10 @@ import StacheConfetti from './components/StacheConfetti.vue'
 	</main>
 	<SiteFooter />
 
-	<EdgePeeker id="edge-peek" watch="#about" />
+	<DwellPeeker id="pencil" watch="#about" :seconds="3" />
 	<HuntToast />
 	<StacheConfetti />
+
+	<!-- TEMPORARY: remove once a hero design is chosen -->
+	<OptionSwitcher />
 </template>

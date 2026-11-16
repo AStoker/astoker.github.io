@@ -1,17 +1,17 @@
 <script setup>
 import NappingStache from './NappingStache.vue'
-import { profile } from '../content.js'
+import { profile, footer } from '../content.js'
 
 const year = new Date().getFullYear()
 </script>
 
 <template>
-	<footer class="site-footer">
+	<footer id="footer" class="site-footer">
 		<div class="container">
 			<div class="inner">
-				<NappingStache id="footer-nap" class="nap" />
+				<NappingStache id="walrus" class="nap" />
 				<p>© {{ year }} {{ profile.firstName }} {{ profile.lastName }}</p>
-				<p class="small">Built with Vue. No mustaches were harmed.</p>
+				<p class="small">{{ footer.note }}</p>
 			</div>
 		</div>
 	</footer>
@@ -19,7 +19,7 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .site-footer {
-	margin-top: clamp(80px, 12vw, 160px);
+	margin-top: clamp(96px, 13vw, 170px);
 }
 
 .inner {
@@ -28,7 +28,7 @@ const year = new Date().getFullYear()
 	flex-wrap: wrap;
 	justify-content: space-between;
 	gap: 8px 24px;
-	padding-block: 24px 40px;
+	padding-block: 28px 44px;
 	border-top: 1.5px solid var(--ink);
 	font-size: 0.95rem;
 }
@@ -41,11 +41,11 @@ const year = new Date().getFullYear()
 	color: var(--ink-soft);
 }
 
-/* Asleep on the line, right where the rule is */
+/* Asleep on the line, mustache drooping over it */
 .nap {
 	position: absolute;
 	top: 0;
 	right: clamp(8px, 10vw, 140px);
-	transform: translateY(calc(-100% + 9px));
+	transform: translateY(calc(-100% + 6px));
 }
 </style>

@@ -2,7 +2,7 @@
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
-import { profile } from '../content.js'
+import { profile, hunt as words } from '../content.js'
 
 const links = [
 	{ id: 'work', label: 'Work' },
@@ -100,16 +100,17 @@ onBeforeUnmount(() => {
 				</span>
 			</nav>
 
-			<p
-				v-if="hunt.count.value > 0"
+			<!-- Always visible, so it's clear there's something to find. Jumps to the family lineup. -->
+			<a
 				class="hunt"
 				:class="{ bump, done: hunt.complete.value }"
-				:title="`Hidden mustaches found: ${hunt.count.value} of ${hunt.total}`"
+				href="#family"
+				:title="`${words.counter}: ${hunt.count.value} of ${hunt.total}`"
 			>
-				<MustacheIcon class="hunt-icon" />
-				<span class="visually-hidden">Hidden mustaches found:</span>
+				<MustacheIcon class="hunt-icon" kind="handlebar" />
+				<span class="visually-hidden">{{ words.counter }}:</span>
 				<span>{{ hunt.count.value }}/{{ hunt.total }}</span>
-			</p>
+			</a>
 		</div>
 	</header>
 </template>
@@ -212,6 +213,8 @@ onBeforeUnmount(() => {
 	gap: 6px;
 	margin: 0;
 	padding: 5px 10px;
+	color: var(--ink);
+	text-decoration: none;
 	font-family: var(--font-mono);
 	font-size: 0.78rem;
 	font-weight: 600;

@@ -1,14 +1,14 @@
 import { reactive, computed } from 'vue'
+import { cousins } from '../content.js'
 
-// Every hidden mustache on the page. Add an id here when you add a new hiding spot.
-export const SPOTS = ['work-slot', 'edge-peek', 'contact-card', 'footer-nap']
-
-const STORAGE_KEY = 'stache-hunt:v1'
+// The hidden cousins are listed in content.js; this keeps track of which are found.
+const IDS = cousins.map((c) => c.id)
+const STORAGE_KEY = 'stache-hunt:v2'
 
 function load() {
 	try {
 		const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-		return Array.isArray(saved) ? saved.filter((id) => SPOTS.includes(id)) : []
+		return Array.isArray(saved) ? saved.filter((id) => IDS.includes(id)) : []
 	} catch {
 		return []
 	}
@@ -30,14 +30,16 @@ const state = reactive({
 })
 
 const count = computed(() => state.found.length)
-const complete = computed(() => state.found.length === SPOTS.length)
+const complete = computed(() => state.found.length === IDS.length)
+
+const cousin = (id) => cousins.find((c) => c.id === id)
 
 function isFound(id) {
 	return state.found.includes(id)
 }
 
 function find(id) {
-	if (!SPOTS.includes(id) || isFound(id)) return false
+	if (!IDS.includes(id) || isFound(id)) return false
 	state.found.push(id)
 	state.lastFound = id
 	state.findCount++
@@ -54,5 +56,5 @@ function reset() {
 }
 
 export function useStacheHunt() {
-	return { state, total: SPOTS.length, count, complete, isFound, find, reset }
+	return { state, cousins, cousin, total: IDS.length, count, complete, isFound, find, reset }
 }

@@ -1,10 +1,12 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
+import { hunt as words } from '../content.js'
 
-const { state, count, total, complete, reset } = useStacheHunt()
+const { state, count, total, complete, cousin, reset } = useStacheHunt()
 const show = ref(false)
+const latest = computed(() => cousin(state.lastFound))
 let timer
 
 watch(
@@ -13,7 +15,7 @@ watch(
 		if (complete.value) return // the celebration takes over
 		show.value = true
 		clearTimeout(timer)
-		timer = setTimeout(() => (show.value = false), 2600)
+		timer = setTimeout(() => (show.value = false), 3000)
 	},
 )
 
@@ -29,17 +31,21 @@ function hideAgain() {
 			<div v-if="state.celebrating" class="toast big">
 				<MustacheIcon class="icon" />
 				<div class="text">
-					<p class="title">All {{ total }} mustaches found.</p>
-					<p>An eye for detail like that? We should probably <a href="#contact">work together</a>.</p>
+					<p class="title">{{ words.allTitle }}</p>
+					<p>
+						{{ words.allBody }} <a href="#contact" @click="state.celebrating = false">{{ words.allLink }}</a>.
+					</p>
 				</div>
 				<div class="buttons">
-					<button type="button" class="link" @click="hideAgain">Hide them again</button>
+					<button type="button" class="link" @click="hideAgain">{{ words.reset }}</button>
 					<button type="button" class="close" aria-label="Close" @click="state.celebrating = false">×</button>
 				</div>
 			</div>
-			<div v-else-if="show" class="toast">
-				<MustacheIcon class="icon" />
-				<p>Mustache spotted <span class="count">{{ count }} of {{ total }}</span></p>
+			<div v-else-if="show && latest" class="toast">
+				<MustacheIcon class="icon" :kind="latest.kind" />
+				<p>
+					{{ words.foundOne(latest.name) }} <span class="count">{{ count }} of {{ total }}</span>
+				</p>
 			</div>
 		</Transition>
 	</div>
