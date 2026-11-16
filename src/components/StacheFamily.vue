@@ -1,11 +1,10 @@
 <script setup>
-// The family lineup: me, plus a frame for each cousin. A frame is empty (just a
-// faint outline) until that cousin has been found, then they move in.
-// Every frame gives its clue, so it's always clear how each one is revealed.
+// The family portrait wall: Andrew's mustache in the big frame, and a small frame
+// for each cousin. A frame is empty (just a faint outline) until that cousin has
+// been found, then they move in.
 //
-//   layout="wall"  a gallery wall for the hero: one big portrait, four small ones,
-//                  and one caption underneath that changes with the frame you point at
-//   layout="row"   five in a row, each with its clue written underneath
+// One caption sits under the wall. Point at a frame (or tap it, or tab to it) and
+// the caption switches to that frame's clue, and stays there until you pick another.
 import { ref, computed } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
 import MustacheIcon from './MustacheIcon.vue'
@@ -13,17 +12,11 @@ import { useStacheHunt } from '../composables/stacheHunt.js'
 import { canHover } from '../composables/media.js'
 import { family } from '../content.js'
 
-defineProps({
-	layout: { type: String, default: 'row' },
-})
-
 const hunt = useStacheHunt()
-const how = computed(() => (canHover.value ? 'hover' : 'touch'))
+const prompt = computed(() => (canHover.value ? family.prompt.hover : family.prompt.touch))
 
-// Which frame the caption is about: the one being pointed at, else the last one clicked.
-const pinned = ref(null)
-const pointed = ref(null)
-const active = computed(() => pointed.value ?? pinned.value)
+// The frame the caption is about. It only changes when another frame is chosen.
+const active = ref(null)
 const activeCousin = computed(() => hunt.cousins.find((c) => c.id === active.value))
 
 const meMood = ref('idle')
@@ -31,43 +24,47 @@ const meTwirl = ref(0)
 let meTimer
 
 function pokeMe() {
-	pinned.value = 'me'
+	active.value = 'me'
 	meMood.value = 'happy'
 	meTwirl.value++
 	clearTimeout(meTimer)
 	meTimer = setTimeout(() => (meMood.value = 'idle'), 1200)
 }
 
-function point(id, e) {
-	if (!e || e.pointerType === 'mouse') pointed.value = id
+// Only switch when the pointer settles on a frame, so that brushing past other
+// frames on the way somewhere else doesn't change the clue being read.
+let hoverTimer
+
+function hover(id, e) {
+	if (e.pointerType !== 'mouse') return
+	clearTimeout(hoverTimer)
+	hoverTimer = setTimeout(() => (active.value = id), 110)
 }
 
-function frameLabel(cousin) {
-	const status = hunt.isFound(cousin.id) ? family.found : family.hiding
-	return `${cousin.name}. ${status}. ${cousin.clue[how.value]}`
+function unhover() {
+	clearTimeout(hoverTimer)
 }
+
+const status = (cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
+const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
 </script>
 
 <template>
-	<div id="family" class="family" :class="`is-${layout}`">
-		<ul class="frames" @pointerleave="pointed = null">
-			<li class="frame me">
+	<div id="family" class="family">
+		<ul class="frames">
+			<li class="frame me" :class="{ active: active === 'me' }">
 				<button
 					type="button"
 					class="tile"
 					:aria-label="`${family.me.note}. Click to make it twirl.`"
 					@click="pokeMe"
-					@pointerenter="point('me', $event)"
-					@focus="point('me')"
-					@blur="pointed = null"
+					@pointerenter="hover('me', $event)"
+					@pointerleave="unhover"
+					@focus="active = 'me'"
 				>
 					<StacheCharacter :kind="family.me.kind" fit="face" :mood="meMood" :twirl="meTwirl" />
 					<span class="tag">{{ family.me.name }}</span>
 				</button>
-				<p class="under">
-					<strong>{{ family.me.name }}</strong>
-					<span>{{ family.me.note }}</span>
-				</p>
 			</li>
 
 			<li
@@ -79,25 +76,17 @@ function frameLabel(cousin) {
 				<button
 					type="button"
 					class="tile"
-					:aria-label="frameLabel(cousin)"
-					:aria-pressed="layout === 'wall' ? pinned === cousin.id : undefined"
-					@click="pinned = cousin.id"
-					@pointerenter="point(cousin.id, $event)"
-					@focus="point(cousin.id)"
-					@blur="pointed = null"
+					:aria-label="`${cousin.name}. ${status(cousin)}. ${says(cousin)}`"
+					:aria-pressed="active === cousin.id"
+					@click="active = cousin.id"
+					@pointerenter="hover(cousin.id, $event)"
+					@pointerleave="unhover"
+					@focus="active = cousin.id"
 				>
 					<StacheCharacter v-if="hunt.isFound(cousin.id)" :kind="cousin.kind" fit="face" />
 					<MustacheIcon v-else class="ghost" :kind="cousin.kind" />
 					<span class="tag">{{ cousin.name }}</span>
 				</button>
-				<p class="under">
-					<strong>{{ cousin.name }}</strong>
-					<span class="status" :class="{ on: hunt.isFound(cousin.id) }">
-						{{ hunt.isFound(cousin.id) ? family.found : family.hiding }}
-					</span>
-					<span>{{ cousin.clue[how] }}</span>
-					<a :href="`#${cousin.section}`">{{ family.go }} <span aria-hidden="true">↓</span></a>
-				</p>
 			</li>
 
 			<li class="frame tally" aria-hidden="true">
@@ -108,18 +97,14 @@ function frameLabel(cousin) {
 			</li>
 		</ul>
 
-		<!-- Wall only: one caption that follows the frame you point at -->
 		<p class="caption" aria-live="polite">
 			<template v-if="activeCousin">
 				<strong>{{ activeCousin.name }}</strong>
-				<span class="status" :class="{ on: hunt.isFound(activeCousin.id) }">
-					{{ hunt.isFound(activeCousin.id) ? family.found : family.hiding }}
-				</span>
-				{{ activeCousin.clue[how] }}
-				<a :href="`#${activeCousin.section}`">{{ family.go }} <span aria-hidden="true">↓</span></a>
+				<span class="status" :class="{ on: hunt.isFound(activeCousin.id) }">{{ status(activeCousin) }}</span>
+				{{ says(activeCousin) }}
 			</template>
 			<template v-else-if="active === 'me'">{{ family.meHello }}</template>
-			<template v-else>{{ family.wallIntro }} {{ family.prompt[how] }}</template>
+			<template v-else>{{ family.intro }} {{ prompt }}</template>
 		</p>
 	</div>
 </template>
@@ -127,17 +112,22 @@ function frameLabel(cousin) {
 <style scoped>
 .frames {
 	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 12px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
+.me {
+	grid-column: 1 / span 2;
+	grid-row: 1 / span 2;
+}
+
 .tile {
 	all: unset;
 	position: relative;
-	display: grid;
-	place-items: center;
+	display: block;
 	box-sizing: border-box;
 	width: 100%;
 	aspect-ratio: 1;
@@ -171,6 +161,7 @@ button.tile:focus-visible {
 
 .me .tile {
 	border: 0;
+	border-radius: 24px;
 	background: var(--red);
 	--stache: var(--on-red);
 }
@@ -187,6 +178,13 @@ button.tile:focus-visible {
 	top: 10%;
 	width: 76%;
 	height: 66%;
+}
+
+.me .tile :deep(.stache) {
+	left: 15%;
+	top: 13%;
+	width: 70%;
+	height: 70%;
 }
 
 .ghost {
@@ -208,104 +206,16 @@ button.tile:focus-visible {
 }
 
 .me .tag {
+	left: 7%;
+	bottom: 6%;
+	font-size: 0.75rem;
+	text-align: left;
 	color: var(--on-red);
 }
 
-.status {
-	display: inline-block;
-	padding: 1px 7px;
-	font-family: var(--font-mono);
-	font-size: 0.68rem;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	border: 1px solid currentColor;
-	border-radius: 999px;
-	color: var(--ink-soft);
-}
-
-.status.on {
-	color: var(--red-text);
-}
-
-a {
-	white-space: nowrap;
-	text-decoration-color: var(--red);
-	text-decoration-thickness: 2px;
-	text-underline-offset: 3px;
-}
-
-/* ---------- Row: five across, clue under each ---------- */
-
-.is-row .frames {
-	grid-template-columns: repeat(5, minmax(0, 1fr));
-	gap: clamp(12px, 2vw, 24px);
-}
-
-.is-row .tally,
-.is-row .caption,
-.is-row .tag {
-	display: none;
-}
-
-.under {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 6px;
-	margin: 14px 0 0;
-	font-size: 0.92rem;
-	line-height: 1.45;
-	color: var(--ink-soft);
-}
-
-.under strong {
-	font-family: var(--font-display);
-	font-size: 1.15rem;
-	font-weight: 600;
-	color: var(--ink);
-	font-variation-settings: 'SOFT' 100, 'WONK' 1;
-}
-
-@media (max-width: 900px) {
-	.is-row .frames {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
-
-/* ---------- Wall: big portrait, four small frames, one caption ---------- */
-
-.is-wall .frames {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.is-wall .me {
-	grid-column: 1 / span 2;
-	grid-row: 1 / span 2;
-}
-
-.is-wall .me .tile {
-	border-radius: 24px;
-}
-
-.is-wall .me .tile :deep(.stache) {
-	left: 15%;
-	top: 13%;
-	width: 70%;
-	height: 70%;
-}
-
-.is-wall .me .tag {
-	left: 7%;
-	bottom: 6%;
-	text-align: left;
-	font-size: 0.75rem;
-}
-
-.is-wall .under {
-	display: none;
-}
-
 .tally .tile {
+	display: grid;
+	place-items: center;
 	border-style: solid;
 	border-color: var(--rule);
 	background: transparent;
@@ -320,7 +230,7 @@ a {
 }
 
 .caption {
-	min-height: 4.6em;
+	min-height: 3.2em;
 	margin: 16px 0 0;
 	font-size: 0.95rem;
 	line-height: 1.5;
@@ -332,8 +242,20 @@ a {
 	color: var(--ink);
 }
 
-.caption .status {
+.status {
+	display: inline-block;
 	margin-right: 4px;
+	padding: 1px 7px;
+	font-family: var(--font-mono);
+	font-size: 0.68rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+}
+
+.status.on {
+	color: var(--red-text);
 }
 
 @media (prefers-reduced-motion: reduce) {

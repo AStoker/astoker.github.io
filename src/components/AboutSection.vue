@@ -1,8 +1,6 @@
 <script setup>
 import SectionHead from './SectionHead.vue'
-import StacheFamily from './StacheFamily.vue'
-import { about, family } from '../content.js'
-import { heroOption } from '../composables/heroOption.js'
+import { about } from '../content.js'
 </script>
 
 <template>
@@ -20,13 +18,6 @@ import { heroOption } from '../composables/heroOption.js'
 					</div>
 				</dl>
 			</div>
-		</div>
-
-		<!-- TEMPORARY condition: the portrait-wall hero already shows the family up top -->
-		<div v-if="heroOption !== 'wall'" class="family-block">
-			<h3 class="family-title">{{ family.title }}</h3>
-			<p class="family-intro">{{ family.intro }}</p>
-			<StacheFamily layout="row" />
 		</div>
 	</section>
 </template>
@@ -85,25 +76,6 @@ import { heroOption } from '../composables/heroOption.js'
 	margin: 0;
 	font-weight: 600;
 	text-align: right;
-}
-
-.family-block {
-	margin-top: clamp(56px, 8vw, 96px);
-}
-
-.family-title {
-	margin: 0;
-	font-family: var(--font-display);
-	font-size: clamp(1.6rem, 3vw, 2.2rem);
-	font-weight: 560;
-	letter-spacing: -0.02em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 96;
-}
-
-.family-intro {
-	max-width: 58ch;
-	margin: 10px 0 28px;
-	color: var(--ink-soft);
 }
 
 @media (max-width: 760px) {

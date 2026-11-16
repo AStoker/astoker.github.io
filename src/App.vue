@@ -8,7 +8,6 @@ import SiteFooter from './components/SiteFooter.vue'
 import DwellPeeker from './components/DwellPeeker.vue'
 import HuntToast from './components/HuntToast.vue'
 import StacheConfetti from './components/StacheConfetti.vue'
-import OptionSwitcher from './components/OptionSwitcher.vue'
 </script>
 
 <template>
@@ -25,7 +24,4 @@ import OptionSwitcher from './components/OptionSwitcher.vue'
 	<DwellPeeker id="pencil" watch="#about" :seconds="3" />
 	<HuntToast />
 	<StacheConfetti />
-
-	<!-- TEMPORARY: remove once a hero design is chosen -->
-	<OptionSwitcher />
 </template>

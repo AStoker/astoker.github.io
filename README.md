@@ -16,8 +16,7 @@ npm run build    # production build in dist/
 | Colours, fonts, buttons | `src/styles/main.css` |
 | The mustache shapes | `tools/generate-mustache.mjs` (run it to regenerate `src/assets/mustaches.js`) |
 | A face with a mustache (eyes, brows, moods, twirl) | `src/components/StacheCharacter.vue` |
-| The main mustache and its speech bubble | `src/components/MainStache.vue` |
-| The family lineup | `src/components/StacheFamily.vue` |
+| The portrait wall in the hero | `src/components/StacheFamily.vue` |
 | Which cousins have been found | `src/composables/stacheHunt.js` |
 
 ## The mustaches
@@ -45,9 +44,11 @@ each time; nothing is random.
 | The Horseshoe | Behind the dark card in Say hello | A whisker always pokes out. Hover over the card (or tap it) and it leans out. |
 | The Walrus | On the footer line | Always there, asleep. Click to wake it. |
 
-Clicking a cousin finds it. The family lineup shows who's been found and gives each
-cousin's clue, and the counter in the header links to it. Progress is remembered in the
-browser. Everything works with the keyboard and respects `prefers-reduced-motion`.
+Clicking a cousin finds it, and it moves into its frame on the portrait wall in the
+hero. Each empty frame gives a clue: a riddle that hints at where to look without
+saying how (the clues are in `src/content.js`). The counter in the header links back to
+the wall. Progress is remembered in the browser. Everything works with the keyboard and
+respects `prefers-reduced-motion`.
 
 To hide a new cousin: add it to `cousins` in `src/content.js`, then wrap something with
 an opaque background:
@@ -57,16 +58,6 @@ an opaque background:
 	<div class="card">…</div>
 </HidingStache>
 ```
-
-## Temporary: three hero options
-
-The page currently ships three hero designs with a switcher in the bottom-left corner
-(also `?hero=wall`, `?hero=sign`, `?hero=sun`). Once one is chosen, remove the rest:
-
-- `src/components/OptionSwitcher.vue` and `src/composables/heroOption.js`
-- the two unused files in `src/components/hero/`
-- `src/components/HeroSection.vue` (use the chosen hero directly in `App.vue`)
-- the `heroOption` condition in `src/components/AboutSection.vue`
 
 ## Deploying
 
