@@ -38,6 +38,7 @@ export const about = {
 	facts: [
 		{ label: 'Based in', value: 'Columbia, SC' },
 		{ label: 'Day job', value: 'Senior developer, Swampfox' },
+		{ label: 'Night job', value: 'Teaching my kids how to fix stuff' },
 		{ label: 'Building software since', value: '2013' },
 		{ label: 'Mustache', value: 'Yes, it’s real' },
 	],
