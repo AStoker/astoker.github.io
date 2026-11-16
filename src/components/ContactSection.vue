@@ -13,7 +13,16 @@ import { profile, contact } from '../content.js'
 				<p class="line">{{ contact.line }}</p>
 				<div class="links">
 					<a v-if="profile.email" class="btn btn-inverse" :href="`mailto:${profile.email}`">{{ contact.email }}</a>
-					<a class="btn btn-inverse" :href="profile.github" target="_blank" rel="noopener">
+					<a
+						v-if="profile.linkedin"
+						class="btn btn-inverse-ghost"
+						:href="profile.linkedin"
+						target="_blank"
+						rel="noopener"
+					>
+						{{ contact.linkedin }} <span aria-hidden="true">↗</span>
+					</a>
+					<a v-if="profile.github" class="btn btn-inverse-ghost" :href="profile.github" target="_blank" rel="noopener">
 						{{ contact.github }} <span aria-hidden="true">↗</span>
 					</a>
 				</div>
@@ -25,9 +34,7 @@ import { profile, contact } from '../content.js'
 <style scoped>
 .card {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	align-items: end;
-	gap: 32px;
+	gap: clamp(28px, 4vw, 44px);
 	padding: clamp(28px, 5vw, 56px);
 	border-radius: 24px;
 	background: var(--card);
@@ -50,11 +57,5 @@ import { profile, contact } from '../content.js'
 	display: flex;
 	flex-wrap: wrap;
 	gap: 12px;
-}
-
-@media (max-width: 760px) {
-	.card {
-		grid-template-columns: 1fr;
-	}
 }
 </style>

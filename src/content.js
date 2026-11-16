@@ -6,10 +6,10 @@ export const profile = {
 	lastName: 'Stoker',
 	role: 'Software developer',
 	location: 'Columbia, SC',
+	// The three ways to get in touch, shown in Say hello. Set one to null to hide its button.
+	email: 'Andy.Stoker@iCloud.com',
+	linkedin: 'https://www.linkedin.com/in/AndrewStoker',
 	github: 'https://github.com/AStoker',
-	// Left off on purpose until you decide whether to publish it.
-	// Set to an address (e.g. 'hi@example.com') and an email button appears in Say hello.
-	email: null,
 }
 
 export const hero = {
@@ -90,8 +90,9 @@ export const cousins = [
 export const contact = {
 	title: 'Say hello',
 	line: 'Got an idea, a question, or just want to say hi? I’d love to hear from you.',
-	github: 'Find me on GitHub',
 	email: 'Send me an email',
+	linkedin: 'LinkedIn',
+	github: 'GitHub',
 }
 
 export const hunt = {

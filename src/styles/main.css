@@ -188,6 +188,13 @@ a {
 	border-color: var(--paper);
 }
 
+/* Outlined, for the dark Say hello card */
+.btn-inverse-ghost {
+	color: var(--on-card);
+	background: transparent;
+	border-color: color-mix(in srgb, var(--on-card) 55%, transparent);
+}
+
 /* ---------- Mustache shapes (shared by the character and the icon) ---------- */
 
 .mustache-icon {
