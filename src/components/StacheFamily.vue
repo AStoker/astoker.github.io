@@ -141,7 +141,6 @@ function frameLabel(cousin) {
 	box-sizing: border-box;
 	width: 100%;
 	aspect-ratio: 1;
-	padding: 10% 12% 24%;
 	border: 1.5px dashed var(--rule-strong);
 	border-radius: 16px;
 	background: var(--paper-raised);
@@ -180,8 +179,17 @@ button.tile:focus-visible {
 	outline-color: var(--ink);
 }
 
+/* Every portrait fits the same area of its frame, however long the mustache */
+.tile :deep(.stache),
 .ghost {
-	width: 100%;
+	position: absolute;
+	left: 12%;
+	top: 10%;
+	width: 76%;
+	height: 66%;
+}
+
+.ghost {
 	color: var(--ink);
 	opacity: 0.16;
 }
@@ -276,8 +284,14 @@ a {
 }
 
 .is-wall .me .tile {
-	padding: 12% 14% 14%;
 	border-radius: 24px;
+}
+
+.is-wall .me .tile :deep(.stache) {
+	left: 15%;
+	top: 13%;
+	width: 70%;
+	height: 70%;
 }
 
 .is-wall .me .tag {
