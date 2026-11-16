@@ -1,29 +1,21 @@
-import environment from './environment';
+import { createApp } from 'vue'
+import '@fontsource-variable/fraunces/full.css'
+import '@fontsource-variable/instrument-sans'
+import '@fontsource-variable/jetbrains-mono'
+import './styles/main.css'
+import App from './App.vue'
+import { cousins } from './content.js'
 
-export function configure(aurelia) {
-  aurelia.use
-    .standardConfiguration()
-    .feature('resources');
+createApp(App).mount('#app')
 
-  logWelcomeMessage();
-
-  if (environment.debug) {
-    aurelia.use.developmentLogging();
-  }
-
-  if (environment.testing) {
-    aurelia.use.plugin('aurelia-testing');
-  }
-
-  aurelia.start().then(() => aurelia.setRoot());
-}
-
-function logWelcomeMessage() {
-  console.log(
-    '\n%cCurious one, aren\'t you?\n'
-    + '"Under Construction" is a very loose term right now.\n'
-    + 'Hit me up over on GitHub (https://github.com/AStoker) if you need anything.\n'
-    + 'Party on dudes!\n'
-    + 'https://youtu.be/rph_1DODXDU\n',
-    'background: rgb(220, 162, 110); color:rgb(57, 64, 88)');
-}
+// For anyone who opens the dev tools.
+console.log(
+	'%c' +
+		[
+			'      ▄▄▄▄▄▄   ▄▄▄▄▄▄',
+			'   ▄██████████████████▄',
+			'  ▀▀▀              ▀▀▀',
+		].join('\n') +
+		`\n\nCurious one, aren’t you?\n${cousins.length} mustaches are hiding on this page: ${cousins.map((c) => c.name).join(', ')}.\nhttps://github.com/AStoker/astoker.github.io`,
+	'font-family: monospace; color: #D7301F; font-size: 12px; line-height: 1.3',
+)
