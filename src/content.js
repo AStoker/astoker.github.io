@@ -14,7 +14,7 @@ export const profile = {
 
 export const hero = {
 	greeting: 'Hi, I’m Andrew.',
-	lede: 'I’m a software developer, and the part I’m best at is the part people actually use. I love making things that make life a little easier, or a little more fun, for whoever’s on the other side of the screen.',
+	lede: 'I’m a software developer, and the part I’m best at is the part people actually use. I love making things that make life a little easier, or a little more fun, for whoever’s on the other side of the screen. And by the way, this site is still a work in progress.',
 	primary: { label: 'Say hello', href: '#contact' },
 	secondary: { label: 'About me', href: '#about' },
 }

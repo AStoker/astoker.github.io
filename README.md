@@ -3,9 +3,9 @@
 Andrew Stoker's portfolio. Vue 3 + Vite, deployed to GitHub Pages.
 
 ```sh
-npm install
-npm run dev      # local dev server
-npm run build    # production build in dist/
+yarn install
+yarn dev         # local dev server
+yarn build       # production build in dist/
 ```
 
 ## Where things live
@@ -61,5 +61,5 @@ an opaque background:
 
 ## Deploying
 
-`.github/workflows/deploy.yml` builds and publishes on every push to `master`.
+`.github/workflows/deploy.yml` builds and publishes on every push to `main`.
 One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
