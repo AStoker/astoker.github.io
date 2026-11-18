@@ -151,6 +151,7 @@ export const family = {
 	meHello: 'That’s me. Well, my mustache. Go on, give it a click.',
 	found: 'Found!',
 	hiding: 'Still hiding',
+	done: 'You found all five. Everyone’s home now.', // the caption once the hunt is over
 }
 
 // The hidden cousins. `kind` is a mustache from tools/generate-mustache.mjs.

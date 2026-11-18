@@ -4,17 +4,21 @@
 // been found, then they move in.
 //
 // One caption sits under the wall. Point at a frame (or tap it, or tab to it) and
-// the caption switches to that frame's clue, and stays there until you pick another.
-// Screen readers hear the same clue as part of each frame's name, so the caption
-// isn't announced as well.
+// the caption switches to that frame's clue, and stays there while you're on the wall,
+// so you can move down and read it. Once you're done with the wall (the mouse leaves,
+// you tap or click elsewhere, or focus moves on) it goes back to the intro. On touch,
+// tapping the same frame again does that too. Screen readers hear the same clue as part
+// of each frame's name, so the caption isn't announced as well.
+//
+// Once every cousin is found, a "Hide them again" button stays under the caption.
 //
 // The big frame takes four squares of a 3 × 3 grid, which leaves exactly five for cousins.
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
 import MustacheIcon from './MustacheIcon.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
 import { canHover } from '../composables/media.js'
-import { family } from '../content.js'
+import { family, hunt as words } from '../content.js'
 
 const hunt = useStacheHunt()
 const prompt = computed(() => (canHover.value ? family.prompt.hover : family.prompt.touch))
@@ -49,6 +53,54 @@ function unhover() {
 	clearTimeout(hoverTimer)
 }
 
+// Back to the intro when you're done with the wall.
+const wall = ref(null)
+const caption = ref(null)
+let leaveTimer
+
+function onWallEnter(e) {
+	if (e.pointerType === 'mouse') clearTimeout(leaveTimer)
+}
+
+function onWallLeave(e) {
+	if (e.pointerType !== 'mouse') return
+	clearTimeout(hoverTimer)
+	leaveTimer = setTimeout(() => (active.value = null), 600)
+}
+
+function onWallFocusOut(e) {
+	if (!wall.value?.contains(e.relatedTarget)) active.value = null
+}
+
+// A click, not a pointerdown, so scrolling the page on a phone doesn't count.
+function onDocClick(e) {
+	if (active.value && !wall.value?.contains(e.target)) active.value = null
+}
+
+// Touch has no hover, so a tap shows a frame's clue and a second tap puts it away.
+// (A mouse already chose the frame by hovering; a keyboard by focusing it.)
+let lastPointer = 'mouse'
+
+function choose(id, e) {
+	const tapped = e.detail > 0 && lastPointer !== 'mouse'
+	active.value = tapped && active.value === id ? null : id
+}
+
+async function hideAgain() {
+	hunt.reset()
+	active.value = null
+	await nextTick()
+	caption.value?.focus() // the button is gone, so land somewhere sensible
+}
+
+onMounted(() => document.addEventListener('click', onDocClick))
+onBeforeUnmount(() => {
+	document.removeEventListener('click', onDocClick)
+	clearTimeout(leaveTimer)
+	clearTimeout(hoverTimer)
+	clearTimeout(meTimer)
+})
+
 const status = (cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
 const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
 // "Still hiding" needs a full stop when read aloud; "Found!" already has one.
@@ -56,9 +108,17 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 </script>
 
 <template>
-	<section id="family" class="family" aria-labelledby="family-title">
+	<section
+		id="family"
+		ref="wall"
+		class="family"
+		aria-labelledby="family-title"
+		@pointerenter="onWallEnter"
+		@pointerleave="onWallLeave"
+		@focusout="onWallFocusOut"
+	>
 		<h2 id="family-title" class="visually-hidden">{{ family.title }}</h2>
-		<ul class="frames">
+		<ul class="frames" @pointerdown="lastPointer = $event.pointerType">
 			<li class="frame me" :class="{ active: active === 'me' }">
 				<button
 					type="button"
@@ -84,7 +144,7 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 					type="button"
 					class="tile"
 					:aria-label="`${cousin.name}. ${sentence(status(cousin))} ${says(cousin)}`"
-					@click="active = cousin.id"
+					@click="choose(cousin.id, $event)"
 					@pointerenter="hover(cousin.id, $event)"
 					@pointerleave="unhover"
 					@focus="active = cousin.id"
@@ -96,15 +156,19 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 			</li>
 		</ul>
 
-		<p class="caption">
+		<p ref="caption" class="caption" tabindex="-1">
 			<template v-if="activeCousin">
 				<strong>{{ activeCousin.name }}</strong>
 				<span class="status" :class="{ on: hunt.isFound(activeCousin.id) }">{{ status(activeCousin) }}</span>
 				{{ says(activeCousin) }}
 			</template>
 			<template v-else-if="active === 'me'">{{ family.meHello }}</template>
+			<template v-else-if="hunt.complete.value">{{ family.done }}</template>
 			<template v-else>{{ family.intro }} {{ prompt }}</template>
 		</p>
+		<button v-if="hunt.complete.value" type="button" class="btn btn-ghost again" @click="hideAgain">
+			{{ words.reset }}
+		</button>
 	</section>
 </template>
 
@@ -225,6 +289,16 @@ button.tile:focus-visible {
 	font-size: 0.95rem;
 	line-height: 1.5;
 	color: var(--ink-soft);
+}
+
+.caption:focus {
+	outline: none; /* only focused by script, after hiding them again */
+}
+
+.again {
+	margin-top: 12px;
+	padding: 0.55em 1.1em;
+	font-size: 0.9rem;
 }
 
 .caption strong {

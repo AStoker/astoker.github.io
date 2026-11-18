@@ -12,7 +12,11 @@ let timer
 watch(
 	() => state.findCount,
 	() => {
-		if (complete.value) return // the celebration takes over
+		clearTimeout(timer)
+		if (complete.value) {
+			show.value = false // the celebration takes over, and nothing's left behind once it closes
+			return
+		}
 		show.value = true
 		clearTimeout(timer)
 		timer = setTimeout(() => (show.value = false), 3000)

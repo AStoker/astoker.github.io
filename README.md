@@ -49,8 +49,10 @@ each time; nothing is random.
 
 Clicking a cousin finds it, and it moves into its frame on the portrait wall in the
 hero. Each empty frame gives a clue: a riddle that hints at where to look without
-saying how (the clues are in `src/content.js`). The counter in the header links back to
-the wall. Progress is remembered in the browser.
+saying how (the clues are in `src/content.js`). The caption keeps a clue up while you're
+on the wall, then goes back to its intro. The counter in the header links back to the
+wall. Progress is remembered in the browser, and once all five are found the wall keeps
+a **Hide them again** button to start over.
 
 ## Accessibility
 
