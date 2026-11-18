@@ -228,7 +228,8 @@ const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`)
 						/>
 					</span>
 					<MustacheIcon v-else class="ghost" :kind="cousin.kind" />
-					<span class="tag">{{ cousin.name }}</span>
+					<!-- An empty frame says it's still hiding rather than giving its name, so it reads as a hunt -->
+					<span class="tag">{{ hunt.isFound(cousin.id) ? cousin.name : family.hidingTag }}</span>
 				</button>
 			</li>
 		</ul>
@@ -243,7 +244,9 @@ const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`)
 			<template v-else-if="hunt.complete">
 				{{ family.done }} {{ huntText.allBody }} <a href="#contact">{{ huntText.allLink }}</a>.
 			</template>
-			<template v-else>{{ family.intro }} {{ prompt }}</template>
+			<template v-else>
+				<strong class="ask">{{ family.intro }}</strong> {{ prompt }}
+			</template>
 		</p>
 		<!-- Always takes its space, so the wall doesn't shift when the button comes and goes -->
 		<div class="again-wrap" :class="{ out: phase !== 'idle', off: !hunt.complete }">
@@ -541,6 +544,10 @@ const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`)
 .caption strong {
 	margin-right: 6px;
 	color: var(--ink);
+}
+
+.caption .ask {
+	margin-right: 0; /* the gap is for a name next to its status, not a sentence */
 }
 
 .status {

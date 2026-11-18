@@ -41,7 +41,7 @@ describe('the portrait wall', () => {
 
 	it('introduces itself, with a prompt that suits the device', async () => {
 		const wrapper = mountWall()
-		expect(caption(wrapper)).toContain('Its five cousins are hiding somewhere on this page.')
+		expect(caption(wrapper)).toContain('My mustache’s five cousins are hiding on this page. Can you find them?')
 		expect(caption(wrapper)).toContain('Tap a frame for a clue.')
 		setMedia(MEDIA.hover, true)
 		await wait(0)
@@ -69,7 +69,7 @@ describe('the portrait wall', () => {
 		await press(tile(wrapper, 2), 'touch')
 		expect(caption(wrapper)).toContain('The Pencil')
 		await press(tile(wrapper, 2), 'touch')
-		expect(caption(wrapper)).toContain('Its five cousins')
+		expect(caption(wrapper)).toContain('Can you find them?')
 	})
 
 	it('a found cousin moves into its frame, and its frame says where it was caught', async () => {
@@ -79,6 +79,16 @@ describe('the portrait wall', () => {
 		expect(cousinFrames(wrapper)[0].find('.actor').exists()).toBe(true)
 		expect(cousinFrames(wrapper)[0].classes()).toContain('found')
 		expect(tile(wrapper, 0).attributes('aria-label')).toBe('The Handlebar. Found! Caught reading over a case study’s shoulder.')
+	})
+
+	it('an empty frame says it’s hiding, and shows its name once it’s found', async () => {
+		const wrapper = mountWall()
+		const tag = (n: number) => cousinFrames(wrapper)[n].find('.tag').text()
+		expect(tag(0)).toBe('Hiding')
+		hunt.find('handlebar')
+		await wait(0)
+		expect(tag(0)).toBe('The Handlebar')
+		expect(tag(1)).toBe('Hiding')
 	})
 
 	it('clicking my frame says hello and twirls my mustache', async () => {

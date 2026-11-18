@@ -83,6 +83,8 @@ describe('the cousin counter', () => {
 		const wrapper = mountHeader()
 		const counter = wrapper.find('.hunt')
 		expect(counter.text()).toContain('0/5')
+		expect(counter.find('.hunt-word').text()).toBe('found') // seen, but not read out twice
+		expect(counter.find('.hunt-word').attributes('aria-hidden')).toBe('true')
 		expect(counter.attributes('href')).toBe('#family')
 		hunt.find('pencil')
 		await wait(0)
