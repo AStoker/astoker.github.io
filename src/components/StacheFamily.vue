@@ -284,8 +284,9 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 			</template>
 			<template v-else>{{ family.intro }} {{ prompt }}</template>
 		</p>
-		<div v-if="hunt.complete.value" class="again-wrap" :class="{ out: teasing || phase !== 'idle' }">
-			<span class="again-peeker" aria-hidden="true">
+		<!-- Always takes its space, so the wall doesn't shift when the button comes and goes -->
+		<div class="again-wrap" :class="{ out: teasing || phase !== 'idle', off: !hunt.complete.value }">
+			<span v-if="hunt.complete.value" class="again-peeker" aria-hidden="true">
 				<StacheCharacter :kind="family.me.kind" :mood="peekerMood" :look="phase === 'idle' ? 'up' : null" :rotation="10" />
 			</span>
 			<button
@@ -517,12 +518,24 @@ button.tile:focus-visible {
 }
 
 
+.family {
+	container-type: inline-size; /* so the caption can size itself to the wall */
+}
+
+/* Room for the longest caption, so the wall never shifts as captions change:
+   three lines on a narrow wall, two once there's room */
 .caption {
-	min-height: 3.2em;
+	min-height: 4.5em;
 	margin: 16px 0 0;
 	font-size: 0.95rem;
 	line-height: 1.5;
 	color: var(--ink-soft);
+}
+
+@container (min-width: 420px) {
+	.caption {
+		min-height: 3em;
+	}
 }
 
 .caption:focus {
@@ -535,6 +548,16 @@ button.tile:focus-visible {
 	display: inline-block;
 	margin-top: 12px;
 	isolation: isolate;
+	transition: opacity 250ms;
+}
+
+/* Hidden until the hunt is over, but still holding its place */
+.again-wrap.off {
+	visibility: hidden;
+	opacity: 0;
+	transition:
+		opacity 250ms,
+		visibility 0s 250ms;
 }
 
 .again {
