@@ -5,6 +5,10 @@
 //
 // One caption sits under the wall. Point at a frame (or tap it, or tab to it) and
 // the caption switches to that frame's clue, and stays there until you pick another.
+// Screen readers hear the same clue as part of each frame's name, so the caption
+// isn't announced as well.
+//
+// The big frame takes four squares of a 3 × 3 grid, which leaves exactly five for cousins.
 import { ref, computed } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
 import MustacheIcon from './MustacheIcon.vue'
@@ -47,16 +51,19 @@ function unhover() {
 
 const status = (cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
 const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
+// "Still hiding" needs a full stop when read aloud; "Found!" already has one.
+const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 </script>
 
 <template>
-	<div id="family" class="family">
+	<section id="family" class="family" aria-labelledby="family-title">
+		<h2 id="family-title" class="visually-hidden">{{ family.title }}</h2>
 		<ul class="frames">
 			<li class="frame me" :class="{ active: active === 'me' }">
 				<button
 					type="button"
 					class="tile"
-					:aria-label="`${family.me.note}. Click to make it twirl.`"
+					:aria-label="`${family.me.name}: ${family.me.note}. Click to make it twirl.`"
 					@click="pokeMe"
 					@pointerenter="hover('me', $event)"
 					@pointerleave="unhover"
@@ -76,8 +83,7 @@ const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
 				<button
 					type="button"
 					class="tile"
-					:aria-label="`${cousin.name}. ${status(cousin)}. ${says(cousin)}`"
-					:aria-pressed="active === cousin.id"
+					:aria-label="`${cousin.name}. ${sentence(status(cousin))} ${says(cousin)}`"
 					@click="active = cousin.id"
 					@pointerenter="hover(cousin.id, $event)"
 					@pointerleave="unhover"
@@ -88,16 +94,9 @@ const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
 					<span class="tag">{{ cousin.name }}</span>
 				</button>
 			</li>
-
-			<li class="frame tally" aria-hidden="true">
-				<div class="tile">
-					<span class="big">{{ hunt.count.value }}/{{ hunt.total }}</span>
-					<span class="tag">found</span>
-				</div>
-			</li>
 		</ul>
 
-		<p class="caption" aria-live="polite">
+		<p class="caption">
 			<template v-if="activeCousin">
 				<strong>{{ activeCousin.name }}</strong>
 				<span class="status" :class="{ on: hunt.isFound(activeCousin.id) }">{{ status(activeCousin) }}</span>
@@ -106,7 +105,7 @@ const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
 			<template v-else-if="active === 'me'">{{ family.meHello }}</template>
 			<template v-else>{{ family.intro }} {{ prompt }}</template>
 		</p>
-	</div>
+	</section>
 </template>
 
 <style scoped>
@@ -149,7 +148,7 @@ button.tile:hover {
 }
 
 button.tile:focus-visible {
-	outline: 2px solid var(--red);
+	outline: 2px solid var(--focus);
 	outline-offset: 3px;
 }
 
@@ -205,29 +204,20 @@ button.tile:focus-visible {
 	color: var(--ink-soft);
 }
 
+/* Big and bold, so the dark-on-red label reads (large text needs 3:1; this is 3.6:1) */
 .me .tag {
 	left: 7%;
-	bottom: 6%;
-	font-size: 0.75rem;
+	bottom: 5%;
+	font-family: var(--font-display);
+	font-size: 1.25rem;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: none;
 	text-align: left;
 	color: var(--on-red);
+	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 24;
 }
 
-.tally .tile {
-	display: grid;
-	place-items: center;
-	border-style: solid;
-	border-color: var(--rule);
-	background: transparent;
-}
-
-.big {
-	font-family: var(--font-display);
-	font-size: clamp(1.6rem, 3.4vw, 2.5rem);
-	font-weight: 500;
-	letter-spacing: -0.02em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
-}
 
 .caption {
 	min-height: 3.2em;
@@ -258,13 +248,11 @@ button.tile:focus-visible {
 	color: var(--red-text);
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.tile {
-		transition: none;
-	}
+:root.reduce-motion .tile {
+	transition: none;
+}
 
-	button.tile:hover {
-		transform: none;
-	}
+:root.reduce-motion button.tile:hover {
+	transform: none;
 }
 </style>

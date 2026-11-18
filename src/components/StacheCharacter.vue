@@ -115,6 +115,7 @@ function blinkOnce(then) {
 
 function scheduleBlink() {
 	blinkTimer = setTimeout(() => {
+		if (reducedMotion.value) return scheduleBlink() // hold still, but check again later
 		blinkOnce(() => {
 			// Every so often, a double blink.
 			if (Math.random() < 0.2) setTimeout(() => blinkOnce(), 150)

@@ -80,6 +80,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+	<!-- Lives inside the section it watches, so it comes next in the tab order while you're there. -->
 	<div class="dweller" :class="{ up, reduced: reducedMotion }" :style="{ '--rise': `${seconds}s` }">
 		<button
 			class="peeker"
@@ -95,6 +96,9 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* The box sits on the bottom edge of the window and cuts off anything below it.
+   iOS Safari draws the page underneath its floating toolbar, so a cousin that was only
+   pushed below the edge would still show through there. Clipped and hidden instead. */
 .dweller {
 	--w: 112px;
 	position: fixed;
@@ -103,20 +107,15 @@ onBeforeUnmount(() => {
 	z-index: 40;
 	width: var(--w);
 	height: calc(var(--w) / 2);
-	transform: translateY(105%);
-	transition: transform 320ms cubic-bezier(0.5, 0, 0.75, 0);
+	clip-path: inset(-24px -24px 0 -24px); /* room above and beside for the focus ring */
 	pointer-events: none;
+	visibility: hidden;
+	transition: visibility 0s linear 320ms; /* once it has ducked down */
 }
 
-/* Up: eyes over the bottom edge of the window, mustache resting on it */
 .dweller.up {
-	transform: translateY(7%);
-	transition: transform var(--rise) cubic-bezier(0.6, 0, 0.4, 1);
+	visibility: visible;
 	pointer-events: auto;
-}
-
-.dweller.reduced,
-.dweller.reduced.up {
 	transition: none;
 }
 
@@ -128,10 +127,23 @@ onBeforeUnmount(() => {
 	cursor: pointer;
 	border-radius: 12px;
 	-webkit-tap-highlight-color: transparent;
+	transform: translateY(105%);
+	transition: transform 320ms cubic-bezier(0.5, 0, 0.75, 0);
+}
+
+/* Up: eyes over the bottom edge of the window, mustache resting on it */
+.up .peeker {
+	transform: translateY(0);
+	transition: transform var(--rise) cubic-bezier(0.6, 0, 0.4, 1);
+}
+
+.reduced,
+.reduced .peeker {
+	transition: none;
 }
 
 .peeker:focus-visible {
-	outline: 2px solid var(--red);
+	outline: 2px solid var(--focus);
 	outline-offset: 4px;
 }
 

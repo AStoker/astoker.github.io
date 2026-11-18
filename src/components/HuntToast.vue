@@ -38,7 +38,9 @@ function hideAgain() {
 				</div>
 				<div class="buttons">
 					<button type="button" class="link" @click="hideAgain">{{ words.reset }}</button>
-					<button type="button" class="close" aria-label="Close" @click="state.celebrating = false">×</button>
+					<button type="button" class="close" :aria-label="words.close" @click="state.celebrating = false">
+						<span aria-hidden="true">×</span>
+					</button>
 				</div>
 			</div>
 			<div v-else-if="show && latest" class="toast">
@@ -75,6 +77,7 @@ function hideAgain() {
 	border-radius: 999px;
 	box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4);
 	pointer-events: auto;
+	--focus: var(--paper);
 }
 
 .toast p {
@@ -129,22 +132,30 @@ function hideAgain() {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
-	gap: 6px;
+	gap: 4px;
+	margin: -6px -6px 0 0;
 }
 
 .buttons button {
 	all: unset;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 32px;
 	cursor: pointer;
 	color: inherit;
-	border-radius: 6px;
+	border-radius: 8px;
 }
 
 .buttons button:focus-visible {
-	outline: 2px solid var(--red);
-	outline-offset: 3px;
+	outline: 2px solid var(--focus);
+	outline-offset: 1px;
 }
 
-.link {
+/* .buttons in front so these beat the `all: unset` above */
+.buttons .link {
+	padding: 0 6px;
 	font-size: 0.85rem;
 	text-decoration: underline;
 	text-underline-offset: 3px;
@@ -152,7 +163,8 @@ function hideAgain() {
 	order: 2;
 }
 
-.close {
+.buttons .close {
+	min-width: 32px;
 	font-size: 1.4rem;
 	line-height: 1;
 	order: 1;
@@ -171,10 +183,8 @@ function hideAgain() {
 	transform: translateY(16px);
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.toast-enter-from,
-	.toast-leave-to {
-		transform: none;
-	}
+:root.reduce-motion .toast-enter-from,
+:root.reduce-motion .toast-leave-to {
+	transform: none;
 }
 </style>

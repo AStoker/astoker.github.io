@@ -1,11 +1,12 @@
 <script setup>
 import SectionHead from './SectionHead.vue'
+import DwellPeeker from './DwellPeeker.vue'
 import { about } from '../content.js'
 </script>
 
 <template>
 	<section id="about" class="section container" aria-labelledby="about-title">
-		<SectionHead id="about-title" num="02" :title="about.title" />
+		<SectionHead id="about-title" num="03" :title="about.title" />
 
 		<div class="about-grid">
 			<p class="statement">{{ about.statement }}</p>
@@ -19,6 +20,8 @@ import { about } from '../content.js'
 				</dl>
 			</div>
 		</div>
+
+		<DwellPeeker id="pencil" watch="#about" :seconds="3" />
 	</section>
 </template>
 

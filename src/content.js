@@ -17,6 +17,7 @@ export const hero = {
 	lede: 'I’m a software developer, and the part I’m best at is the part people actually use. I love making things that make life a little easier, or a little more fun, for whoever’s on the other side of the screen. And by the way, this site is still a work in progress.',
 	primary: { label: 'Say hello', href: '#contact' },
 	secondary: { label: 'About me', href: '#about' },
+	resume: 'Download my resume', // the file is set in `resume` below
 }
 
 export const work = {
@@ -25,6 +26,104 @@ export const work = {
 	slots: 3,
 	slotLabel: 'Case study',
 	slotStatus: 'Coming soon',
+}
+
+// The resume PDF lives in public/. Replace that file to update it; the size is shown next to the link.
+export const resume = {
+	href: '/andrew-stoker-resume.pdf',
+	filename: 'Andrew Stoker resume.pdf', // what it's saved as
+	format: 'PDF, 64\u00a0KB', // \u00a0 keeps the size on one line
+}
+
+export const experience = {
+	title: 'Experience',
+	note: 'The highlights, not the whole list. If you’d rather just have the resume, it’s right here.',
+	download: 'Download my resume',
+
+	// The skeleton, newest first. The resume has every bullet point.
+	pathTitle: 'The short version',
+	path: [
+		{ years: '2022–now', role: 'Senior developer', org: 'Swampfox' },
+		{ years: '2016–2022', role: 'Core team', org: 'Aurelia, open source' },
+		{ years: '2014–2022', role: 'Developer to UI architect', org: 'SoftDocs' },
+		{ years: '2013–2014', role: 'Developer', org: 'Elytus' },
+		{ years: '2013', role: 'B.S. Computer Science, minor in Graphic Design', org: 'Cedarville University' },
+	],
+
+	toolsTitle: 'Tools I reach for',
+	tools: [
+		'JavaScript',
+		'TypeScript',
+		'Vue',
+		'React',
+		'Angular',
+		'Aurelia',
+		'Web Components',
+		'CSS & Sass',
+		'Vitest & Jest',
+		'Cypress',
+		'Azure DevOps',
+		'GitHub',
+		'Figma',
+		'Illustrator',
+	],
+
+	// The fun parts, each one a skill people hire for.
+	highlightsTitle: 'A few highlights',
+	highlights: [
+		{
+			title: 'I lead the team, not just the tickets',
+			where: 'Swampfox · 2022–now',
+			body: 'I lead a cross-functional sprint team. I run our planning and retros, sketch storyboards with other teams before anyone writes code, and keep our test coverage honest. Mostly, my job is clearing the way so good people can do good work.',
+			tags: ['Leadership', 'Agile', 'Testing'],
+		},
+		{
+			title: 'I helped build a JavaScript framework',
+			where: 'Aurelia core team · 2016–2022',
+			body: 'Six years of open source with developers all over the world. I added virtual (infinite) scrolling, made the CLI and build times faster, wrote docs, and worked through a lot of GitHub issues.',
+			tags: ['Open source', 'JavaScript', 'Performance'],
+		},
+		{
+			title: 'I got a whole department onto one UI',
+			where: 'SoftDocs · 2014–2022',
+			body: 'Eight years and three titles, from developer to UI architect. Along the way I moved us from TFVC to Git, built our pipelines in Azure DevOps, led the work to put every app on one accessible UI framework, and ran training sessions for the whole company.',
+			tags: ['Architecture', 'Accessibility', 'CI/CD'],
+		},
+		{
+			title: 'I design it, then I build it',
+			where: 'Computer science, with a minor in graphic design',
+			body: 'I’m as happy in Figma or Illustrator as I am in the code. I talk with the people who’ll use the thing, make the mockups and prototypes, then build what we drew. Fewer handoffs, fewer surprises.',
+			tags: ['Design', 'Prototyping', 'User research'],
+		},
+	],
+
+	// Everything that isn't software. `atWork` is what it brings back to the day job.
+	offClock: {
+		title: 'Off the clock',
+		intro: 'When I’m not writing code, I’m usually making something with my hands. Clay, wood or a circuit board, depending on the week.',
+		atWorkLabel: 'At work:',
+		crafts: [
+			{
+				name: 'Pottery',
+				line: 'Clay won’t be rushed. Pull too fast and the whole thing folds, so you slow down, start over, and get a little better each time.',
+				atWork: 'iterate, and don’t fall in love with the first draft.',
+			},
+			{
+				name: 'Woodworking',
+				line: 'There’s no undo on a saw. You plan the cut before you make it, and you learn that the joints nobody sees still matter.',
+				atWork: 'plan before you build, and sweat the details nobody sees.',
+			},
+			{
+				name: 'Electronics',
+				line: 'Nothing humbles you like a circuit that won’t turn on. There’s no stack trace for a cold solder joint, so you test one thing at a time until you find it.',
+				atWork: 'debug calmly, one thing at a time.',
+			},
+		],
+		closing: 'Each one is a different way of looking at a problem, and they all come to work with me. That’s what I bring to anything I build: a fresh light.',
+		// The workbench picture next to it
+		lampCord: 'Pull the lamp cord',
+		lampTag: 'pull',
+	},
 }
 
 export const about = {
@@ -46,9 +145,10 @@ export const about = {
 
 // The portrait wall in the hero. `me` is the big frame; each cousin gets a small one.
 export const family = {
-	intro: 'The big one’s my mustache. Its four cousins are hiding somewhere on this page.',
+	intro: 'The big one’s my mustache. Its five cousins are hiding somewhere on this page.',
 	prompt: { hover: 'Hover over a frame for a clue.', touch: 'Tap a frame for a clue.' },
 	me: { kind: 'chevron', name: 'Me', note: 'Andrew’s mustache' },
+	title: 'The mustache family', // read out by screen readers only
 	meHello: 'That’s me. Well, my mustache. Go on, give it a click.',
 	found: 'Found!',
 	hiding: 'Still hiding',
@@ -62,8 +162,15 @@ export const cousins = [
 		id: 'handlebar',
 		kind: 'handlebar',
 		name: 'The Handlebar',
-		clue: 'Can’t resist a blank canvas. Lately there are a few to choose from.',
-		found: 'Caught saving a seat for a case study.',
+		clue: 'A big fan of my work. Always reading over the top of it.',
+		found: 'Caught reading over a case study’s shoulder.',
+	},
+	{
+		id: 'dali',
+		kind: 'dali',
+		name: 'The Dalí',
+		clue: 'Off the clock and sitting in the dark. Could use a fresh light.',
+		found: 'Every artist needs good lighting.',
 	},
 	{
 		id: 'pencil',
@@ -94,17 +201,20 @@ export const contact = {
 	email: 'Send me an email',
 	linkedin: 'LinkedIn',
 	github: 'GitHub',
+	newTab: '(opens in a new tab)', // read out by screen readers only
 }
 
 export const hunt = {
 	counter: 'Cousins found',
 	foundOne: (name) => `You found ${name}!`,
-	allTitle: 'You found all four!',
+	allTitle: 'You found all five!',
 	allBody: 'You’ve got a good eye. We’d probably get along, so',
 	allLink: 'say hello',
 	reset: 'Hide them again',
+	close: 'Close',
 }
 
 export const footer = {
 	note: 'Built with Vue and a little mustache wax.',
+	motion: 'Reduce motion', // the switch that stills every animation on the page
 }

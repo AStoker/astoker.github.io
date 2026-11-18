@@ -5,7 +5,7 @@
 //   - A sliver of it pokes out all the time, as a hint that someone's back there.
 //   - Mouse: it comes out while the pointer is over the slot, and ducks back when it leaves.
 //   - Touch: tap the slot to bring it out, tap again to send it back.
-//   - Keyboard: tabbing to it brings it out.
+//   - Keyboard: tabbing to it brings it out. Escape sends a hover-peek back.
 // Clicking the cousin itself counts as finding it.
 //
 //   <HidingStache id="handlebar" from="top" at="70%">
@@ -54,6 +54,7 @@ const label = computed(() =>
 )
 
 const spot = ref(null)
+const button = ref(null)
 const peeking = ref(false)
 const mood = ref('idle')
 const twirl = ref(0)
@@ -115,7 +116,14 @@ function onFound() {
 	}
 }
 
+// Content that pops out on hover has to be dismissible without moving the pointer.
+// (When it's out because it has keyboard focus, it stays: it's the thing focused.)
+function onKey(e) {
+	if (e.key === 'Escape' && peeking.value && document.activeElement !== button.value) hide(0)
+}
+
 onMounted(() => {
+	document.addEventListener('keydown', onKey)
 	// Scrolled away: back into hiding, ready for next time.
 	observer = new IntersectionObserver(([entry]) => {
 		if (!entry.isIntersecting) hide(0)
@@ -124,6 +132,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+	document.removeEventListener('keydown', onKey)
 	observer?.disconnect()
 	clearTimeout(hideTimer)
 })
@@ -141,6 +150,7 @@ onBeforeUnmount(() => {
 	>
 		<div class="rail">
 			<button
+				ref="button"
 				class="peeker"
 				type="button"
 				:aria-label="label"
@@ -192,7 +202,7 @@ onBeforeUnmount(() => {
 }
 
 .peeker:focus-visible {
-	outline: 2px solid var(--red);
+	outline: 2px solid var(--focus);
 	outline-offset: 4px;
 }
 

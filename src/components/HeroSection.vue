@@ -1,7 +1,7 @@
 <script setup>
 // The hero: who Andrew is on the left, the family portrait wall on the right.
 import StacheFamily from './StacheFamily.vue'
-import { profile, hero } from '../content.js'
+import { profile, hero, resume } from '../content.js'
 </script>
 
 <template>
@@ -20,6 +20,16 @@ import { profile, hero } from '../content.js'
 				<a class="btn btn-solid" :href="hero.primary.href">{{ hero.primary.label }}</a>
 				<a class="btn btn-ghost" :href="hero.secondary.href">{{ hero.secondary.label }}</a>
 			</div>
+			<!-- For anyone who only came for the resume -->
+			<p class="resume">
+				<a :href="resume.href" :download="resume.filename">
+					<svg class="resume-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+						<path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M3 13.5h10" />
+					</svg>
+					{{ hero.resume }}</a
+				>
+				<span class="format">{{ resume.format }}</span>
+			</p>
 		</div>
 
 		<StacheFamily class="wall" />
@@ -65,6 +75,43 @@ import { profile, hero } from '../content.js'
 .lede strong {
 	font-weight: 600;
 	color: var(--ink);
+}
+
+.resume {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 10px;
+	margin: 18px 0 0;
+	padding-left: 4px;
+}
+
+.resume a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 28px;
+	font-weight: 600;
+	text-decoration-color: var(--red);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 4px;
+	border-radius: 4px;
+}
+
+.resume-icon {
+	width: 1em;
+	height: 1em;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.format {
+	font-family: var(--font-mono);
+	font-size: 0.78rem;
+	color: var(--ink-soft);
 }
 
 .actions {
