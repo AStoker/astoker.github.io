@@ -7,6 +7,7 @@ import { resetMedia } from './browser'
 import { hunt, wallCaptionInView } from '../composables/stacheHunt'
 import { pointer } from '../composables/pointer'
 import { setReducedMotion } from '../composables/media'
+import { resetTracking } from '../composables/tracking'
 
 // Unmount whatever a test mounted before anything else is reset, so no component reacts
 // to the clean-up.
@@ -24,6 +25,7 @@ afterEach(() => {
 	wallCaptionInView.value = false
 	Object.assign(pointer, { x: 0, y: 0, has: false, lastMove: 0, type: 'mouse' })
 	setReducedMotion(false)
+	resetTracking()
 	resetMedia()
 	localStorage.clear()
 	document.body.innerHTML = ''

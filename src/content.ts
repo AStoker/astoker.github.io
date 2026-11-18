@@ -288,3 +288,16 @@ export const footer = {
 	note: 'Built with Vue and a little mustache wax.',
 	motion: 'Reduce motion', // the switch that stills every animation on the page
 }
+
+// Microsoft Clarity, behind the link in my footer
+export const tracking = {
+	summary: 'Yes, I’m watching (for bugs)',
+	note: [
+		'The honest version: I use Microsoft Clarity to see how this site gets used. Where people click, how far they scroll, which bits they linger on, and, mostly, when something breaks.',
+		'That last one’s the whole point. If a button stops working or a page falls over on someone’s phone, I’d rather spot it and fix it myself than have you spend your afternoon writing me a bug report. It’s how I like to work on anything: if something’s going wrong for you, I want to be the first to notice.',
+		'There are no cookies and no ads. Clarity doesn’t know who you are, and every page you open counts as its own anonymous visit. If it still isn’t your thing, flip the switch below, no hard feelings. Microsoft does keep the data, under',
+	],
+	privacyLink: 'their privacy statement',
+	privacyUrl: 'https://privacy.microsoft.com/privacystatement',
+	switch: 'Help me catch bugs', // on means Clarity can run
+}

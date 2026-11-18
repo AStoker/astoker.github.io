@@ -7,9 +7,13 @@ import App from './App.vue'
 import CaseStudyPage from './components/CaseStudyPage.vue'
 import { studyAt } from './caseStudies'
 import './devConsole'
+import { startTracking } from './composables/tracking'
 
 // One app, two kinds of page: my home page, or a case study's own page at /work/<slug>/.
 // (The build writes a copy of index.html at each of those addresses; see vite.config.ts.)
 const study = studyAt(location.pathname)
 const app = study ? createApp(CaseStudyPage, { study }) : createApp(App)
 app.mount('#app')
+
+// Clarity, on the live site, if this visitor is OK with it.
+startTracking()
