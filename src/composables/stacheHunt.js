@@ -27,6 +27,7 @@ const state = reactive({
 	celebrating: false, // true right after the last one is found
 	lastFound: null,
 	findCount: 0, // bumps on every new find, handy for triggering animations
+	hideRequests: 0, // bumps when someone asks to hide them again; the portrait wall scatters them, then resets
 })
 
 const count = computed(() => state.found.length)
@@ -48,6 +49,11 @@ function find(id) {
 	return true
 }
 
+// "Hide them again" from anywhere: the portrait wall plays the scatter, then calls reset().
+function requestHide() {
+	state.hideRequests++
+}
+
 function reset() {
 	state.found.splice(0)
 	state.celebrating = false
@@ -56,5 +62,5 @@ function reset() {
 }
 
 export function useStacheHunt() {
-	return { state, cousins, cousin, total: IDS.length, count, complete, isFound, find, reset }
+	return { state, cousins, cousin, total: IDS.length, count, complete, isFound, find, reset, requestHide }
 }

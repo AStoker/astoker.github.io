@@ -9,8 +9,12 @@ import { reducedMotion } from '../composables/media.js'
 const props = defineProps({
 	// Which mustache it wears: any kind from assets/mustaches.js
 	kind: { type: String, default: 'chevron' },
-	// idle | surprised | happy | sleep
+	// idle | surprised | happy | sleep, and for reacting to things:
+	// suspicious (eyes narrowed, one brow down) | excited (brows up, a little hop) |
+	// nervous (worried brows, eyes wide)
 	mood: { type: String, default: 'idle' },
+	// Pin the pupils one way instead of following the pointer: left | right | up | down
+	look: { type: String, default: null },
 	// How the character is rotated on screen (degrees), so a sideways one still looks at the cursor.
 	rotation: { type: Number, default: 0 },
 	// Bump this number to make the mustache twirl.
@@ -49,6 +53,9 @@ const EYES = [
 	{ x: 75, y: -7 },
 ]
 const MAX_LOOK = 3.9 // how far a pupil can travel from the centre of its eye
+const LOOKS = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }
+const OPEN_EYED = ['idle', 'surprised', 'suspicious', 'excited', 'nervous']
+const pupilSize = computed(() => ({ surprised: 3, excited: 5 })[props.mood] ?? 4.4)
 
 const root = ref(null)
 const pupil = reactive({ x: 0, y: 0 })
@@ -63,7 +70,7 @@ let blinkTimer
 let twirlTimer
 let wander = { x: 0, y: 0, until: 0 }
 
-const eyesOpen = () => props.eyes && (props.mood === 'idle' || props.mood === 'surprised')
+const eyesOpen = () => props.eyes && OPEN_EYED.includes(props.mood)
 
 function frame(now) {
 	raf = 0
@@ -71,7 +78,9 @@ function frame(now) {
 
 	let tx = 0
 	let ty = 0
-	if (eyesOpen()) {
+	if (eyesOpen() && LOOKS[props.look]) {
+		;[tx, ty] = LOOKS[props.look].map((d) => d * MAX_LOOK)
+	} else if (eyesOpen()) {
 		const idle = !pointer.has || now - pointer.lastMove > 4000
 		if (idle) {
 			// Nobody's moving the cursor: glance around on our own.
@@ -166,13 +175,13 @@ onBeforeUnmount(() => {
 	>
 		<template v-if="eyes">
 			<template v-for="eye in EYES" :key="eye.x">
-				<g v-if="mood === 'idle' || mood === 'surprised'" class="eye-open">
+				<g v-if="OPEN_EYED.includes(mood)" class="eye-open">
 					<circle class="sclera" :cx="eye.x" :cy="eye.y" r="9.5" />
 					<circle
 						class="pupil"
 						:cx="eye.x + pupil.x"
 						:cy="eye.y + pupil.y"
-						:r="mood === 'surprised' ? 3 : 4.4"
+						:r="pupilSize"
 					/>
 					<circle class="glint" :cx="eye.x + pupil.x + 1.5" :cy="eye.y + pupil.y - 1.6" r="1.2" />
 				</g>
@@ -185,7 +194,14 @@ onBeforeUnmount(() => {
 				<!-- asleep: closed lids -->
 				<path v-else class="line" :d="`M${eye.x - 7} ${eye.y} Q${eye.x} ${eye.y + 5} ${eye.x + 7} ${eye.y}`" />
 			</template>
-			<path v-for="d in brows.d" :key="d" class="brow line" :d="d" :style="{ strokeWidth: brows.width }" />
+			<path
+				v-for="(d, i) in brows.d"
+				:key="d"
+				class="brow line"
+				:class="i ? 'brow-r' : 'brow-l'"
+				:d="d"
+				:style="{ strokeWidth: brows.width }"
+			/>
 		</template>
 
 		<g class="half half-l"><path :d="shape.half" transform="translate(120 0) scale(-1 1)" /></g>
@@ -241,6 +257,8 @@ onBeforeUnmount(() => {
 }
 
 .brow {
+	transform-box: fill-box;
+	transform-origin: center;
 	transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -254,6 +272,55 @@ onBeforeUnmount(() => {
 
 .is-sleep .brow {
 	transform: translateY(2px);
+}
+
+/* Suspicious: eyes narrowed, one brow down and the other up */
+.is-suspicious .eye-open {
+	transform: scaleY(0.5);
+}
+
+.is-suspicious .brow-l {
+	transform: translateY(2.5px) rotate(14deg);
+}
+
+.is-suspicious .brow-r {
+	transform: translateY(-3px) rotate(-5deg);
+}
+
+/* Excited: eyes wide, brows high, and a little hop */
+.is-excited {
+	animation: hop 420ms cubic-bezier(0.3, 0, 0.5, 1) infinite alternate;
+}
+
+.is-excited .eye-open {
+	transform: scale(1.1);
+}
+
+.is-excited .brow {
+	transform: translateY(-5px);
+}
+
+@keyframes hop {
+	to {
+		transform: translateY(-7%);
+	}
+}
+
+/* Nervous: worried brows, eyes wide */
+.is-nervous .eye-open {
+	transform: scale(1.06);
+}
+
+.is-nervous .brow-l {
+	transform: translateY(-2px) rotate(-16deg);
+}
+
+.is-nervous .brow-r {
+	transform: translateY(-2px) rotate(16deg);
+}
+
+:root.reduce-motion .is-excited {
+	animation: none;
 }
 
 .twirling .half-l {

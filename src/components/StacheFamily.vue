@@ -10,14 +10,18 @@
 // tapping the same frame again does that too. Screen readers hear the same clue as part
 // of each frame's name, so the caption isn't announced as well.
 //
-// Once every cousin is found, a "Hide them again" button stays under the caption.
+// Once every cousin is found, a "Hide them again" button stays under the caption, with
+// Andrew's mustache tucked behind it. Hover (or focus) the button and each cousin reacts
+// in its own way. Press it (or the one in the celebration toast) and they all get a
+// fright, then bolt out of their frames. Each frame is a window: they vanish past its
+// edge rather than running across the page. Then the hunt resets.
 //
 // The big frame takes four squares of a 3 × 3 grid, which leaves exactly five for cousins.
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
 import MustacheIcon from './MustacheIcon.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
-import { canHover } from '../composables/media.js'
+import { canHover, reducedMotion } from '../composables/media.js'
 import { family, hunt as words } from '../content.js'
 
 const hunt = useStacheHunt()
@@ -86,12 +90,77 @@ function choose(id, e) {
 	active.value = tapped && active.value === id ? null : id
 }
 
-async function hideAgain() {
-	hunt.reset()
-	active.value = null
-	await nextTick()
-	caption.value?.focus() // the button is gone, so land somewhere sensible
+// ---------- Hide them again ----------
+
+// How each cousin takes it, in wall order (repeats if more cousins are added).
+// `look` pins the eyes, `lean` has them edging out already, `run` is the way they bolt.
+const REACTIONS = [
+	{ mood: 'suspicious', look: 'left', run: 'up' }, // the Handlebar
+	{ mood: 'excited', run: 'right' }, // the Dalí
+	{ mood: 'nervous', look: 'left', lean: 'left', run: 'left' }, // the Pencil, halfway out the door
+	{ mood: 'suspicious', look: 'right', run: 'down' }, // the Horseshoe
+	{ mood: 'sleep', run: 'right' }, // the Walrus sleeps right through it
+]
+const reaction = (i) => REACTIONS[i % REACTIONS.length]
+const STARTLE_MS = 650
+const RUN_MS = 520 // keep in step with .run in the styles below
+const STAGGER_MS = 80
+
+const teasing = ref(false) // the button is hovered or focused
+const phase = ref('idle') // idle | startled | running
+let scatterTimers = []
+
+function cousinMood(i) {
+	if (phase.value !== 'idle') return 'surprised'
+	return teasing.value ? reaction(i).mood : 'idle'
 }
+
+function cousinLook(i) {
+	if (phase.value === 'running') return reaction(i).run
+	if (phase.value === 'idle' && teasing.value) return reaction(i).look ?? null
+	return null
+}
+
+function actorClass(i) {
+	const { lean, run } = reaction(i)
+	return {
+		[`lean-${lean}`]: lean && (teasing.value || phase.value !== 'idle'),
+		startled: phase.value === 'startled',
+		[`run run-${run}`]: phase.value === 'running',
+	}
+}
+
+const peekerMood = computed(() => ({ idle: 'suspicious', startled: 'surprised', running: 'happy' })[phase.value])
+
+function scatter() {
+	if (phase.value !== 'idle') return
+	if (!hunt.count.value) return finish()
+	active.value = null
+	phase.value = 'startled'
+	scatterTimers.push(
+		setTimeout(() => {
+			phase.value = 'running'
+			meMood.value = 'happy' // Andrew finds this very funny
+			meTwirl.value++
+		}, STARTLE_MS),
+	)
+	// With motion reduced they don't run; they just go once the fright is over.
+	const running = reducedMotion.value ? 150 : RUN_MS + STAGGER_MS * (hunt.cousins.length - 1) + 60
+	scatterTimers.push(setTimeout(finish, STARTLE_MS + running))
+}
+
+async function finish() {
+	hunt.reset()
+	phase.value = 'idle'
+	teasing.value = false
+	active.value = null
+	meMood.value = 'idle'
+	await nextTick()
+	caption.value?.focus({ preventScroll: true }) // the button is gone, so land somewhere sensible
+}
+
+// Either "Hide them again" button asks through the hunt, so both get the same send-off.
+watch(() => hunt.state.hideRequests, scatter)
 
 onMounted(() => document.addEventListener('click', onDocClick))
 onBeforeUnmount(() => {
@@ -99,6 +168,7 @@ onBeforeUnmount(() => {
 	clearTimeout(leaveTimer)
 	clearTimeout(hoverTimer)
 	clearTimeout(meTimer)
+	scatterTimers.forEach(clearTimeout)
 })
 
 const status = (cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
@@ -118,7 +188,7 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 		@focusout="onWallFocusOut"
 	>
 		<h2 id="family-title" class="visually-hidden">{{ family.title }}</h2>
-		<ul class="frames" @pointerdown="lastPointer = $event.pointerType">
+		<ul class="frames" :class="{ scattering: phase !== 'idle' }" @pointerdown="lastPointer = $event.pointerType">
 			<li class="frame me" :class="{ active: active === 'me' }">
 				<button
 					type="button"
@@ -129,13 +199,13 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 					@pointerleave="unhover"
 					@focus="active = 'me'"
 				>
-					<StacheCharacter :kind="family.me.kind" fit="face" :mood="meMood" :twirl="meTwirl" />
+					<StacheCharacter class="me-face" :kind="family.me.kind" fit="face" :mood="meMood" :twirl="meTwirl" />
 					<span class="tag">{{ family.me.name }}</span>
 				</button>
 			</li>
 
 			<li
-				v-for="cousin in hunt.cousins"
+				v-for="(cousin, i) in hunt.cousins"
 				:key="cousin.id"
 				class="frame"
 				:class="{ found: hunt.isFound(cousin.id), active: active === cousin.id }"
@@ -149,7 +219,14 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 					@pointerleave="unhover"
 					@focus="active = cousin.id"
 				>
-					<StacheCharacter v-if="hunt.isFound(cousin.id)" :kind="cousin.kind" fit="face" />
+					<span
+						v-if="hunt.isFound(cousin.id)"
+						class="actor"
+						:class="actorClass(i)"
+						:style="phase === 'running' ? { animationDelay: `${i * STAGGER_MS}ms` } : null"
+					>
+						<StacheCharacter class="face" :kind="cousin.kind" fit="face" :mood="cousinMood(i)" :look="cousinLook(i)" />
+					</span>
 					<MustacheIcon v-else class="ghost" :kind="cousin.kind" />
 					<span class="tag">{{ cousin.name }}</span>
 				</button>
@@ -166,9 +243,22 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 			<template v-else-if="hunt.complete.value">{{ family.done }}</template>
 			<template v-else>{{ family.intro }} {{ prompt }}</template>
 		</p>
-		<button v-if="hunt.complete.value" type="button" class="btn btn-ghost again" @click="hideAgain">
-			{{ words.reset }}
-		</button>
+		<div v-if="hunt.complete.value" class="again-wrap" :class="{ out: teasing || phase !== 'idle' }">
+			<span class="again-peeker" aria-hidden="true">
+				<StacheCharacter :kind="family.me.kind" :mood="peekerMood" :look="phase === 'idle' ? 'up' : null" :rotation="10" />
+			</span>
+			<button
+				type="button"
+				class="btn btn-ghost again"
+				@click="hunt.requestHide()"
+				@pointerenter="teasing = true"
+				@pointerleave="teasing = false"
+				@focus="teasing = true"
+				@blur="teasing = false"
+			>
+				{{ words.reset }}
+			</button>
+		</div>
 	</section>
 </template>
 
@@ -234,7 +324,7 @@ button.tile:focus-visible {
 }
 
 /* Every portrait fits the same area of its frame, however long the mustache */
-.tile :deep(.stache),
+.actor,
 .ghost {
 	position: absolute;
 	left: 12%;
@@ -243,7 +333,13 @@ button.tile:focus-visible {
 	height: 66%;
 }
 
-.me .tile :deep(.stache) {
+.actor > .face {
+	width: 100%;
+	height: 100%;
+}
+
+.tile > .me-face {
+	position: absolute;
 	left: 15%;
 	top: 13%;
 	width: 70%;
@@ -253,6 +349,103 @@ button.tile:focus-visible {
 .ghost {
 	color: var(--ink);
 	opacity: 0.16;
+	animation: ghost-in 400ms ease-out; /* fades back in once they've run off */
+}
+
+@keyframes ghost-in {
+	from {
+		opacity: 0;
+	}
+}
+
+/* ---------- Hide them again: the reactions and the scatter ---------- */
+
+.actor {
+	transition:
+		translate 320ms cubic-bezier(0.34, 1.45, 0.64, 1),
+		rotate 320ms cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+/* Already edging towards the side of the frame, shaking */
+.lean-left {
+	translate: -16% 0;
+	rotate: -8deg;
+}
+
+.lean-right {
+	translate: 16% 0;
+	rotate: 8deg;
+}
+
+.lean-left > .face,
+.lean-right > .face {
+	animation: shiver 90ms linear infinite alternate;
+}
+
+@keyframes shiver {
+	to {
+		transform: translateX(2%);
+	}
+}
+
+/* Each frame is a window: they disappear past its edge */
+.scattering .tile {
+	overflow: hidden;
+}
+
+.startled {
+	animation: startle 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes startle {
+	40% {
+		transform: translateY(-12%) scale(1.06);
+	}
+}
+
+/* A quick step back, then gone. Keep the duration in step with RUN_MS. */
+.run {
+	animation: 520ms cubic-bezier(0.5, -0.4, 0.85, 0.4) forwards;
+}
+
+.run-up {
+	animation-name: run-up;
+}
+
+.run-down {
+	animation-name: run-down;
+}
+
+.run-left {
+	animation-name: run-left;
+}
+
+.run-right {
+	animation-name: run-right;
+}
+
+@keyframes run-up {
+	to {
+		transform: translateY(-175%);
+	}
+}
+
+@keyframes run-down {
+	to {
+		transform: translateY(175%);
+	}
+}
+
+@keyframes run-left {
+	to {
+		transform: translateX(-150%);
+	}
+}
+
+@keyframes run-right {
+	to {
+		transform: translateX(150%);
+	}
 }
 
 .tag {
@@ -295,10 +488,35 @@ button.tile:focus-visible {
 	outline: none; /* only focused by script, after hiding them again */
 }
 
-.again {
+/* Hide them again, with Andrew's mustache tucked behind it. It leans out on hover. */
+.again-wrap {
+	position: relative;
+	display: inline-block;
 	margin-top: 12px;
+	isolation: isolate;
+}
+
+.again {
+	position: relative;
+	z-index: 1;
 	padding: 0.55em 1.1em;
 	font-size: 0.9rem;
+	background: var(--paper); /* solid, so the mustache behind stays hidden */
+}
+
+.again-peeker {
+	position: absolute;
+	z-index: 0;
+	top: 50%;
+	right: 12px;
+	width: 58px;
+	pointer-events: none;
+	transform: translate(0, -50%);
+	transition: transform 380ms cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+.again-wrap.out .again-peeker {
+	transform: translate(42px, -50%) rotate(10deg);
 }
 
 .caption strong {
@@ -328,5 +546,22 @@ button.tile:focus-visible {
 
 :root.reduce-motion button.tile:hover {
 	transform: none;
+}
+
+:root.reduce-motion .actor,
+:root.reduce-motion .again-peeker {
+	transition: none;
+}
+
+:root.reduce-motion .lean-left > .face,
+:root.reduce-motion .lean-right > .face,
+:root.reduce-motion .startled {
+	animation: none;
+}
+
+/* No running: they simply go */
+:root.reduce-motion .run {
+	animation: none;
+	visibility: hidden;
 }
 </style>

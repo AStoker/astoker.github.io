@@ -4,7 +4,7 @@ import MustacheIcon from './MustacheIcon.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
 import { hunt as words } from '../content.js'
 
-const { state, count, total, complete, cousin, reset } = useStacheHunt()
+const { state, count, total, complete, cousin, requestHide } = useStacheHunt()
 const show = ref(false)
 const latest = computed(() => cousin(state.lastFound))
 let timer
@@ -23,8 +23,19 @@ watch(
 	},
 )
 
+// Back up to the portrait wall, where they all run off before the hunt resets.
+// The send-off waits until the scroll lands, so it isn't over before you get there.
 function hideAgain() {
-	reset()
+	state.celebrating = false
+	if (window.scrollY < 10) return requestHide()
+	let sent = false
+	const send = () => {
+		if (sent) return
+		sent = true
+		requestHide()
+	}
+	window.addEventListener('scrollend', send, { once: true })
+	setTimeout(send, 1200) // for browsers without scrollend
 	window.scrollTo({ top: 0 })
 }
 </script>
