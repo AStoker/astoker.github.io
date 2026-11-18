@@ -6,6 +6,9 @@ My portfolio. Vue 3 + Vite, deployed to GitHub Pages.
 yarn install
 yarn dev         # local dev server
 yarn build       # production build in dist/
+yarn test        # run the tests once
+yarn test:watch  # re-run the tests as I edit
+yarn coverage    # the tests, plus a report of what they cover (in coverage/)
 ```
 
 ## Where things live
@@ -16,6 +19,7 @@ yarn build       # production build in dist/
 | My resume | `public/andrew-stoker-resume.pdf` (when I replace it, I update the size in `resume` in `content.js` too) |
 | Colours, fonts, buttons | `src/styles/main.css` |
 | The mustache shapes | `tools/generate-mustache.mjs` (run it to regenerate `src/assets/mustaches.js`) |
+| Test helpers and the fake browser APIs | `src/test/` |
 | A face with a mustache (eyes, brows, moods, twirl) | `src/components/StacheCharacter.vue` |
 | A numbered section with its heading | `src/components/PageSection.vue` |
 | My portrait wall in the hero | `src/components/StacheFamily.vue`, with its caption in `src/composables/frameSelection.js` |
@@ -110,7 +114,29 @@ I aim for WCAG 2.2 AA, checked with axe in light and dark mode and at 320px wide
   safe for small text on both papers; `--red` is for shapes and large type only.
 - Below 540px the header links fold into a Menu button so the counter never gets pushed off.
 
+## Testing
+
+The tests use [Vitest](https://vitest.dev) and [Vue Test Utils](https://test-utils.vuejs.org),
+in jsdom. Each one sits next to what it tests (`HidingStache.vue` → `HidingStache.test.js`).
+
+- **Composables** are tested on their own; `withSetup()` runs one inside a real component so
+  its clean-up on unmount gets tested too.
+- **Components** are tested the way a visitor uses them: pointer events, taps, keys and
+  time passing. `useFakeClock()` and `wait(ms)` move time on, so the reactions and animations
+  can be checked step by step without waiting for real.
+- **`content.test.js`** checks my content fits together (every cousin has its words and a
+  real mustache, the wall has room for them all).
+- **`tools/generate-mustache.test.js`** fails if I change a shape but forget to run the
+  generator.
+- **`App.test.js`** mounts the whole page and checks every cousin is hidden exactly once.
+
+jsdom has no `IntersectionObserver` or `matchMedia`, so `src/test/browser.js` fakes them, and
+a test can drive them: `intersect(el)` scrolls something into view, `setMedia(MEDIA.narrow,
+true)` makes the window narrow. `src/test/setup.js` puts everything back after each test.
+
 ## Deploying
 
-`.github/workflows/deploy.yml` builds and publishes on every push to `main`.
+`.github/workflows/deploy.yml` runs the tests, then builds and publishes on every push to
+`main`. A failing test stops the deploy. `.github/workflows/test.yml` runs the tests on every
+pull request.
 One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
