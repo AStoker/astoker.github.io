@@ -45,7 +45,7 @@ export const experience = {
 	path: [
 		{ years: '2022–now', role: 'Senior developer', org: 'Swampfox' },
 		{ years: '2016–2022', role: 'Core team', org: 'Aurelia, open source' },
-		{ years: '2014–2022', role: 'Developer to UI architect', org: 'SoftDocs' },
+		{ years: '2014–2022', role: 'Developer to UI architect', org: 'Softdocs' },
 		{ years: '2013–2014', role: 'Developer', org: 'Elytus' },
 		{ years: '2013', role: 'B.S. Computer Science, minor in Graphic Design', org: 'Cedarville University' },
 	],
@@ -57,7 +57,6 @@ export const experience = {
 		'Vue',
 		'React',
 		'Angular',
-		'Aurelia',
 		'Web Components',
 		'CSS & Sass',
 		'Vitest & Jest',
@@ -80,12 +79,12 @@ export const experience = {
 		{
 			title: 'I helped build a JavaScript framework',
 			where: 'Aurelia core team · 2016–2022',
-			body: 'Six years of open source with developers all over the world. I added virtual (infinite) scrolling, made the CLI and build times faster, wrote docs, and worked through a lot of GitHub issues.',
-			tags: ['Open source', 'JavaScript', 'Performance'],
+			body: 'Six years on the core team of an open-source framework, with developers all over the world. A lot of that time went to the community: answering issues, talking problems through, and helping people ship. The rest went into making the framework faster and easier to understand, from quicker builds to clearer docs.',
+			tags: ['Open source', 'Community', 'Performance'],
 		},
 		{
 			title: 'I got a whole department onto one UI',
-			where: 'SoftDocs · 2014–2022',
+			where: 'Softdocs · 2014–2022',
 			body: 'Eight years and three titles, from developer to UI architect. Along the way I moved us from TFVC to Git, built our pipelines in Azure DevOps, led the work to put every app on one accessible UI framework, and ran training sessions for the whole company.',
 			tags: ['Architecture', 'Accessibility', 'CI/CD'],
 		},
@@ -100,13 +99,13 @@ export const experience = {
 	// Everything that isn't software. `atWork` is what it brings back to the day job.
 	offClock: {
 		title: 'Off the clock',
-		intro: 'When I’m not writing code, I’m usually making something with my hands. Clay, wood or a circuit board, depending on the week.',
+		intro: 'Software isn’t my only craft. I also work in clay, wood, electronics and the garden, and each one has taught me something I couldn’t have learned at a keyboard.',
 		atWorkLabel: 'At work:',
 		crafts: [
 			{
 				name: 'Pottery',
-				line: 'Clay won’t be rushed. Pull too fast and the whole thing folds, so you slow down, start over, and get a little better each time.',
-				atWork: 'iterate, and don’t fall in love with the first draft.',
+				line: 'Every potter has watched a pot collapse on the wheel. It isn’t a disaster, it’s part of the work. You ball the clay back up, start again, and the next one is better for the mistake.',
+				atWork: 'make mistakes early, and don’t fall in love with the first draft.',
 			},
 			{
 				name: 'Woodworking',
@@ -117,6 +116,11 @@ export const experience = {
 				name: 'Electronics',
 				line: 'Nothing humbles you like a circuit that won’t turn on. There’s no stack trace for a cold solder joint, so you test one thing at a time until you find it.',
 				atWork: 'debug calmly, one thing at a time.',
+			},
+			{
+				name: 'Gardening',
+				line: 'You can’t rush a tomato. You prune a little, feed a little, water a little, and a season later all those small choices pay you back.',
+				atWork: 'be patient. Small, careful changes pay off big over time.',
 			},
 		],
 		closing: 'Each one is a different way of looking at a problem, and they all come to work with me. That’s what I bring to anything I build: a fresh light.',

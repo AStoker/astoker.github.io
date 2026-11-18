@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
 					aria-controls="main-nav-links"
 					@click="menuOpen = !menuOpen"
 				>
-					<MustacheIcon class="menu-icon" />
+					<span class="menu-lines" aria-hidden="true"><span /><span /><span /></span>
 					Menu
 				</button>
 				<ul id="main-nav-links" @pointerleave="hovered = null">
@@ -303,37 +303,66 @@ onBeforeUnmount(() => {
 		width: 34px;
 	}
 
+	/* Plain text like the links it stands in for, so it never looks like the
+	   outlined hunt counter beside it */
 	.menu-toggle {
 		all: unset;
 		box-sizing: border-box;
 		display: inline-flex;
 		align-items: center;
-		gap: 8px;
-		min-height: 36px;
-		padding: 4px 14px 4px 11px;
-		font-size: 0.95rem;
-		font-weight: 600;
+		gap: 10px;
+		min-height: 44px;
+		padding: 0 6px;
+		font-weight: 550;
 		color: var(--ink);
 		cursor: pointer;
-		border: 1.5px solid var(--ink);
-		border-radius: 999px;
+		border-radius: 8px;
 		-webkit-tap-highlight-color: transparent;
 	}
 
 	.menu-toggle:focus-visible {
 		outline: 2px solid var(--focus);
-		outline-offset: 3px;
+		outline-offset: 2px;
 	}
 
-	/* The little mustache turns upside down while the menu's open */
-	.menu-icon {
-		width: 20px;
-		color: var(--red);
-		transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	/* Three lines that fold into an × while the menu's open */
+	.menu-lines {
+		position: relative;
+		width: 18px;
+		height: 14px;
 	}
 
-	.open .menu-icon {
-		transform: rotate(180deg);
+	.menu-lines span {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 2px;
+		border-radius: 2px;
+		background: currentColor;
+		transition:
+			transform 220ms ease,
+			opacity 150ms;
+	}
+
+	.menu-lines span:nth-child(2) {
+		top: 6px;
+	}
+
+	.menu-lines span:nth-child(3) {
+		top: 12px;
+	}
+
+	.open .menu-lines span:nth-child(1) {
+		transform: translateY(6px) rotate(45deg);
+	}
+
+	.open .menu-lines span:nth-child(2) {
+		opacity: 0;
+	}
+
+	.open .menu-lines span:nth-child(3) {
+		transform: translateY(-6px) rotate(-45deg);
 	}
 
 	.nav ul {
@@ -376,7 +405,7 @@ onBeforeUnmount(() => {
 	transition: opacity 200ms;
 }
 
-:root.reduce-motion .menu-icon {
+:root.reduce-motion .menu-lines span {
 	transition: none;
 }
 

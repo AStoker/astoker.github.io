@@ -115,8 +115,12 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 			<rect class="shelf" x="16" y="200" width="328" height="8" rx="2" />
 			<path class="shelf" d="M48 208 H60 L48 226 Z M300 208 H312 L312 226 Z" />
 
-			<!-- Pottery: a vase -->
+			<!-- Pottery and gardening: a vase with something growing in it -->
 			<g class="thing">
+				<path class="stem" d="M78 132 C78 120 77 110 79 98" />
+				<path d="M78 121 C71 114 62 115 58 121 C64 127 72 127 78 121 Z" />
+				<path d="M78.5 112 C85 104 95 104 99 109 C93 116 84 117 78.5 112 Z" />
+				<path d="M79 99 C75 92 77 84 83 80 C86 87 85 95 79 99 Z" />
 				<path d="M64 200 C55 186 53 168 64 156 C70 149 70 143 66 137 L90 137 C86 143 86 149 92 156 C103 168 101 186 92 200 Z" />
 				<rect x="62" y="131" width="32" height="7" rx="2.5" />
 			</g>
@@ -204,6 +208,7 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 	fill: #36322c;
 }
 
+.stem,
 .cable {
 	fill: none;
 	stroke: #36322c;
