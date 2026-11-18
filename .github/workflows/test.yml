@@ -1,4 +1,4 @@
-# Runs my tests on every pull request, so I know a branch is safe before it reaches main.
+# Type-checks and tests every pull request, so I know a branch is safe before it reaches main.
 name: Test
 
 on:
@@ -18,5 +18,6 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install --frozen-lockfile
+      - run: yarn typecheck
       - run: yarn test
       - run: yarn build

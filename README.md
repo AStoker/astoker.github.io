@@ -1,11 +1,12 @@
 # astoker.github.io
 
-My portfolio. Vue 3 + Vite, deployed to GitHub Pages.
+My portfolio. Vue 3 + Vite + TypeScript, deployed to GitHub Pages.
 
 ```sh
 yarn install
 yarn dev         # local dev server
 yarn build       # production build in dist/
+yarn typecheck   # check the types across the site, tools and tests
 yarn test        # run the tests once
 yarn test:watch  # re-run the tests as I edit
 yarn coverage    # the tests, plus a report of what they cover (in coverage/)
@@ -15,24 +16,25 @@ yarn coverage    # the tests, plus a report of what they cover (in coverage/)
 
 | What | Where |
 | --- | --- |
-| Every word on the site, the list of sections, and the list of cousins | `src/content.js` |
-| My resume | `public/andrew-stoker-resume.pdf` (when I replace it, I update the size in `resume` in `content.js` too) |
+| Every word on the site, the list of sections, and the list of cousins | `src/content.ts` |
+| What a cousin, a section or a mood is allowed to be | `src/types.ts` |
+| My resume | `public/andrew-stoker-resume.pdf` (when I replace it, I update the size in `resume` in `content.ts` too) |
 | Colours, fonts, buttons | `src/styles/main.css` |
-| The mustache shapes | `tools/generate-mustache.mjs` (run it to regenerate `src/assets/mustaches.js`) |
+| The mustache shapes | `tools/generate-mustache.ts` (run it to regenerate `src/assets/mustaches.ts`) |
 | Test helpers and the fake browser APIs | `src/test/` |
 | A face with a mustache (eyes, brows, moods, twirl) | `src/components/StacheCharacter.vue` |
 | A numbered section with its heading | `src/components/PageSection.vue` |
-| My portrait wall in the hero | `src/components/StacheFamily.vue`, with its caption in `src/composables/frameSelection.js` |
-| Which cousins have been found | `src/composables/stacheHunt.js` |
-| What a cousin does when it's found | `src/composables/cousin.js` |
-| Which section is in the middle of the screen | `src/composables/currentSection.js` |
-| Timeouts that clean up after themselves | `src/composables/timers.js` |
-| Reduced motion (system setting plus the footer switch) | `src/composables/media.js` |
-| My mustache and note in the browser's developer console | `src/devConsole.js` (art) and `devConsole` in `src/content.js` (words) |
+| My portrait wall in the hero | `src/components/StacheFamily.vue`, with its caption in `src/composables/frameSelection.ts` |
+| Which cousins have been found | `src/composables/stacheHunt.ts` |
+| What a cousin does when it's found | `src/composables/cousin.ts` |
+| Which section is in the middle of the screen | `src/composables/currentSection.ts` |
+| Timeouts that clean up after themselves | `src/composables/timers.ts` |
+| Reduced motion (system setting plus the footer switch) | `src/composables/media.ts` |
+| My mustache and note in the browser's developer console | `src/devConsole.ts` (art) and `devConsole` in `src/content.ts` (words) |
 
 ## Sections
 
-The page's sections are listed in `sections` at the bottom of `content.js`. Each one has an
+The page's sections are listed in `sections` at the bottom of `content.ts`. Each one has an
 `id` (what the menu links to), a `title`, and a `menu` label. Its number (01, 02…) comes
 from its place in that list, so to add or reorder a section I only change the list and
 wrap the new component in `<PageSection :section="…">`.
@@ -40,11 +42,11 @@ wrap the new component in `<PageSection :section="…">`.
 ## The mustaches
 
 There are six kinds: `chevron` (mine), `handlebar`, `walrus`, `horseshoe`, `pencil`
-and `dali`. Each is described in `tools/generate-mustache.mjs` as a centreline plus how
+and `dali`. Each is described in `tools/generate-mustache.ts` as a centreline plus how
 thick the hair is above and below it. I edit an entry (or add one) and run:
 
 ```sh
-node tools/generate-mustache.mjs
+node tools/generate-mustache.ts
 ```
 
 Any kind can be used as `<MustacheIcon kind="walrus" />` or
@@ -65,7 +67,7 @@ each time; nothing is random.
 
 Clicking a cousin finds it, and it moves into its frame on my portrait wall in the
 hero. Each empty frame gives a clue: a riddle that hints at where to look without
-saying how (the clues are in `src/content.js`). The caption keeps a clue up while you're
+saying how (the clues are in `src/content.ts`). The caption keeps a clue up while you're
 on the wall, then goes back to its intro. The counter in the header links back to the
 wall. Progress is remembered in the browser, and once all five are found the wall keeps
 a **Hide them again** button to start over.
@@ -82,11 +84,13 @@ top of the button.
 
 To hide a new cousin:
 
-1. Add it to `cousins` in `src/content.js`, with a `label` for screen readers to hear
+1. Add its id to `CousinId` in `src/types.ts`. The type checker then points at everything
+   else it needs.
+2. Add it to `cousins` in `src/content.ts`, with a `label` for screen readers to hear
    before it's found. (The portrait wall is a 3 × 3 grid with room for exactly five, so a
    sixth needs a new wall layout.)
-2. Give it a reaction in `REACTIONS` in `StacheFamily.vue`.
-3. Wrap something with an opaque background:
+3. Give it a reaction in `REACTIONS` in `StacheFamily.vue` (it won't type-check until it has one).
+4. Wrap something with an opaque background:
 
 ```vue
 <HidingStache id="my-new-cousin" from="top" at="70%">
@@ -94,7 +98,7 @@ To hide a new cousin:
 </HidingStache>
 ```
 
-A hiding spot of a new kind can use `useCousin(id)` from `composables/cousin.js`, which
+A hiding spot of a new kind can use `useCousin(id)` from `composables/cousin.ts`, which
 handles being found, the mood, the twirl and the label. The component only has to decide
 how the cousin hides.
 
@@ -106,7 +110,7 @@ I aim for WCAG 2.2 AA, checked with axe in light and dark mode and at 320px wide
   the page, so it's next in the tab order while it's up.
 - Motion follows the system's reduced-motion setting, and the **Reduce motion** switch in my
   footer stills every blink, breath and wiggle (WCAG 2.2.2). Components hook in with
-  `:root.reduce-motion .thing { ... }` in CSS or `reducedMotion` from `composables/media.js`.
+  `:root.reduce-motion .thing { ... }` in CSS or `reducedMotion` from `composables/media.ts`.
 - Focus rings use `--focus`. Anything on a dark or inverted surface (the Say hello card, the
   toast) sets its own. Buttons drawn as something else (a mustache, a frame) use the
   `.bare-button` class, which keeps the focus ring.
@@ -114,25 +118,45 @@ I aim for WCAG 2.2 AA, checked with axe in light and dark mode and at 320px wide
   safe for small text on both papers; `--red` is for shapes and large type only.
 - Below 540px the header links fold into a Menu button so the counter never gets pushed off.
 
+## TypeScript
+
+Everything is TypeScript, checked strictly. The shared shapes (`Cousin`, `Section`, `Mood`,
+`Direction`…) are in `src/types.ts`, and `MustacheKind` comes from the generated
+`src/assets/mustaches.ts`. Everything exported, and every component prop, has a doc comment,
+so hovering it in the editor says what it's for.
+
+There are three projects, all checked by `yarn typecheck`:
+
+| Project | Covers | Notes |
+| --- | --- | --- |
+| `tsconfig.app.json` | the site | browser only, so Node APIs can't sneak in |
+| `tsconfig.node.json` | `vite.config.ts` and `tools/` | Node only; the generator runs straight through Node, so it sticks to syntax Node can strip |
+| `tsconfig.vitest.json` | the tests | sees both |
+
+It's on TypeScript 6.0, which `vue-tsc` and the editor tooling are built on. TypeScript 7
+(the Go compiler) can't run those yet: it has no JavaScript API. Its speed can be had through
+[typescript-native-bridge](https://github.com/johnsoncodehk/typescript-native-bridge), a drop-in
+`typescript` replacement, if checking ever gets slow.
+
 ## Testing
 
 The tests use [Vitest](https://vitest.dev) and [Vue Test Utils](https://test-utils.vuejs.org),
-in jsdom. Each one sits next to what it tests (`HidingStache.vue` → `HidingStache.test.js`).
+in jsdom. Each one sits next to what it tests (`HidingStache.vue` → `HidingStache.test.ts`).
 
 - **Composables** are tested on their own; `withSetup()` runs one inside a real component so
   its clean-up on unmount gets tested too.
 - **Components** are tested the way a visitor uses them: pointer events, taps, keys and
   time passing. `useFakeClock()` and `wait(ms)` move time on, so the reactions and animations
   can be checked step by step without waiting for real.
-- **`content.test.js`** checks my content fits together (every cousin has its words and a
+- **`content.test.ts`** checks my content fits together (every cousin has its words and a
   real mustache, the wall has room for them all).
-- **`tools/generate-mustache.test.js`** fails if I change a shape but forget to run the
+- **`tools/generate-mustache.test.ts`** fails if I change a shape but forget to run the
   generator.
-- **`App.test.js`** mounts the whole page and checks every cousin is hidden exactly once.
+- **`App.test.ts`** mounts the whole page and checks every cousin is hidden exactly once.
 
-jsdom has no `IntersectionObserver` or `matchMedia`, so `src/test/browser.js` fakes them, and
+jsdom has no `IntersectionObserver` or `matchMedia`, so `src/test/browser.ts` fakes them, and
 a test can drive them: `intersect(el)` scrolls something into view, `setMedia(MEDIA.narrow,
-true)` makes the window narrow. `src/test/setup.js` puts everything back after each test.
+true)` makes the window narrow. `src/test/setup.ts` puts everything back after each test.
 
 ## Deploying
 

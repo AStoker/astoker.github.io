@@ -1,20 +1,28 @@
-<script setup>
+<script setup lang="ts">
 // One numbered section of my page: its heading, an optional note beside it, then whatever
-// goes in the default slot. `section` is one of `sections` in content.js; its place in that
-// list gives it its number, and its id is what the menu links to.
+// goes in the default slot.
 //
 //   <PageSection :section="work">
 //     <template #note><p>{{ work.note }}</p></template>
 //     …
 //   </PageSection>
-import { sections } from '../content.js'
+import { sections } from '../content'
+import type { Section } from '../types'
 
-const props = defineProps({
-	section: { type: Object, required: true },
-})
+const { section } = defineProps<{
+	/** One of `sections` in content.ts. Its place in that list gives it its number. */
+	section: Section
+}>()
 
-const num = String(sections.indexOf(props.section) + 1).padStart(2, '0')
-const titleId = `${props.section.id}-title`
+defineSlots<{
+	/** Sits beside the heading. Left out if not given. */
+	note?(): unknown
+	/** The section's content, under the heading. */
+	default?(): unknown
+}>()
+
+const num = String(sections.indexOf(section) + 1).padStart(2, '0')
+const titleId = `${section.id}-title`
 </script>
 
 <template>

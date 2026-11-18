@@ -1,10 +1,10 @@
-<script setup>
+<script setup lang="ts">
 // My family portrait wall: my mustache in the big frame, and a small frame for each
 // cousin. A frame is empty (just a faint outline) until that cousin has been found,
 // then they move in.
 //
 // One caption sits under the wall and shows the clue for whichever frame you're on
-// (see composables/frameSelection.js). Screen readers hear the same clue as part of
+// (see composables/frameSelection.ts). Screen readers hear the same clue as part of
 // each frame's name, so the caption isn't announced as well.
 //
 // Once every cousin is found, a "Hide them again" button stays under the caption, with
@@ -14,25 +14,29 @@
 // edge rather than running across the page. Then the hunt resets.
 //
 // The big frame takes four squares of a 3 × 3 grid, which leaves exactly five for cousins.
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { hunt, wallCaptionInView } from '../composables/stacheHunt.js'
-import { useFrameSelection } from '../composables/frameSelection.js'
-import { useTimers } from '../composables/timers.js'
-import { canHover, reducedMotion } from '../composables/media.js'
-import { family, huntText } from '../content.js'
+import { hunt, wallCaptionInView } from '../composables/stacheHunt'
+import { useFrameSelection } from '../composables/frameSelection'
+import { useTimers } from '../composables/timers'
+import { canHover, reducedMotion } from '../composables/media'
+import { family, huntText } from '../content'
+import type { Cousin, CousinId, Direction, Mood } from '../types'
 
-const wall = ref(null)
-const caption = ref(null)
-const selection = useFrameSelection(wall)
+/** A frame on the wall: mine, or a cousin's. */
+type Frame = 'me' | CousinId
+
+const wall = useTemplateRef<HTMLElement>('wall')
+const caption = useTemplateRef<HTMLElement>('caption')
+const selection = useFrameSelection<Frame>(wall)
 const { active, hover, unhover, focus, choose, wallEvents } = selection
-const activeCousin = computed(() => hunt.cousin(active.value))
+const activeCousin = computed(() => hunt.cousins.find((c) => c.id === active.value))
 const prompt = computed(() => (canHover.value ? family.prompt.hover : family.prompt.touch))
 
 // ---------- My frame ----------
 
-const meMood = ref('idle')
+const meMood = ref<Mood>('idle')
 const meTwirl = ref(0)
 const meTimers = useTimers()
 
@@ -50,24 +54,44 @@ function pokeMe() {
 
 // ---------- Hide them again ----------
 
-// How each cousin takes it. `look` pins their eyes, `lean` has them edging out already,
-// and `run` is the way they bolt.
-const REACTIONS = {
+/** How a cousin takes being teased, then scattered. */
+interface Reaction {
+	/** How it looks while the button is hovered or focused. */
+	mood: Mood
+	/** Where its eyes are pinned while teased (otherwise they follow the pointer). */
+	look?: Direction
+	/** Already edging out of its frame while teased, this way. */
+	lean?: 'left' | 'right'
+	/** The way it bolts when the button is pressed. */
+	run: Direction
+}
+
+// How each cousin takes it. A new cousin won't compile until it has a reaction here.
+const REACTIONS: Record<CousinId, Reaction> = {
 	handlebar: { mood: 'curious', look: 'down', run: 'up' }, // all eyes on the button
 	dali: { mood: 'excited', run: 'right' },
 	pencil: { mood: 'nervous', look: 'left', lean: 'left', run: 'left' }, // halfway out the door
 	horseshoe: { mood: 'suspicious', look: 'right', run: 'down' },
 	walrus: { mood: 'sleep', run: 'right' }, // sleeps right through it
 }
-// A new cousin without a reaction of its own just looks on.
-const reaction = (id) => REACTIONS[id] ?? { mood: 'curious', run: 'up' }
 
-// idle → teasing (the button is hovered or focused) → startled → running → idle
-const phase = ref('idle')
+/** idle → teasing (the button is hovered or focused) → startled → running → idle */
+type Phase = 'idle' | 'teasing' | 'startled' | 'running'
+
+/** What a found cousin is doing at one moment. */
+interface Act {
+	mood: Mood
+	look?: Direction
+	lean?: 'left' | 'right'
+	startled?: boolean
+	run?: Direction
+}
+
+const phase = ref<Phase>('idle')
 const scattering = computed(() => phase.value === 'startled' || phase.value === 'running')
 
 // What a found cousin is doing in each phase.
-const ACTING = {
+const ACTING: Record<Phase, (r: Reaction) => Act> = {
 	idle: () => ({ mood: 'idle' }),
 	teasing: (r) => ({ mood: r.mood, look: r.look, lean: r.lean }),
 	startled: (r) => ({ mood: 'surprised', lean: r.lean, startled: true }),
@@ -77,7 +101,7 @@ const ACTING = {
 const actors = computed(() =>
 	Object.fromEntries(
 		hunt.cousins.map((cousin) => {
-			const act = ACTING[phase.value](reaction(cousin.id))
+			const act = ACTING[phase.value](REACTIONS[cousin.id])
 			return [
 				cousin.id,
 				{
@@ -87,21 +111,19 @@ const actors = computed(() =>
 				},
 			]
 		}),
-	),
+	) as Record<CousinId, { mood: Mood; look: Direction | null; class: (string | false | undefined)[] }>,
 )
 
 // My mustache behind the button: suspicious of the whole thing, then delighted by it.
-const peeker = computed(
-	() =>
-		({
-			idle: { mood: 'suspicious', look: 'up' },
-			teasing: { mood: 'suspicious', look: 'up' },
-			startled: { mood: 'surprised', look: null },
-			running: { mood: 'happy', look: null },
-		})[phase.value],
-)
+const PEEKER: Record<Phase, { mood: Mood; look: Direction | null }> = {
+	idle: { mood: 'suspicious', look: 'up' },
+	teasing: { mood: 'suspicious', look: 'up' },
+	startled: { mood: 'surprised', look: null },
+	running: { mood: 'happy', look: null },
+}
+const peeker = computed(() => PEEKER[phase.value])
 
-function tease(on) {
+function tease(on: boolean) {
 	if (!scattering.value) phase.value = on ? 'teasing' : 'idle'
 }
 
@@ -136,14 +158,14 @@ async function finish() {
 watch(() => hunt.hideRequests, scatter)
 
 // Let the celebration toast know when my caption is fully on screen, so it can step aside.
-let captionObserver
+let captionObserver: IntersectionObserver | undefined
 
 onMounted(() => {
 	captionObserver = new IntersectionObserver(
-		([entry]) => (wallCaptionInView.value = entry.intersectionRatio > 0.99),
+		([entry]) => (wallCaptionInView.value = (entry?.intersectionRatio ?? 0) > 0.99),
 		{ threshold: [0, 1] },
 	)
-	captionObserver.observe(caption.value)
+	if (caption.value) captionObserver.observe(caption.value)
 })
 
 onBeforeUnmount(() => {
@@ -151,10 +173,10 @@ onBeforeUnmount(() => {
 	wallCaptionInView.value = false
 })
 
-const status = (cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
-const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
+const status = (cousin: Cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
+const says = (cousin: Cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
 // "Still hiding" needs a full stop when read aloud; "Found!" already has one.
-const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
+const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`)
 </script>
 
 <template>

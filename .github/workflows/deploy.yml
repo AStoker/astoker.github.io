@@ -1,5 +1,5 @@
-# Tests and builds my site, then publishes it to GitHub Pages on every push to main.
-# A failing test stops the deploy.
+# Type-checks, tests and builds my site, then publishes it to GitHub Pages on every push to
+# main. A type error or failing test stops the deploy.
 # One-time setup: repo Settings → Pages → Build and deployment → Source: "GitHub Actions".
 name: Deploy to GitHub Pages
 
@@ -27,6 +27,7 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install --frozen-lockfile
+      - run: yarn typecheck
       - run: yarn test
       - run: yarn build
       - uses: actions/upload-pages-artifact@v4

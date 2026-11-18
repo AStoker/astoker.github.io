@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import PageSection from './PageSection.vue'
 import HidingStache from './HidingStache.vue'
-import { profile, contact } from '../content.js'
+import { profile, contact } from '../content'
 </script>
 
 <template>

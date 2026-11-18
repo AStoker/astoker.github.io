@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Hides one of my cousins behind whatever goes in the slot.
 //
 // How it's revealed (always the same, nothing random):
@@ -11,60 +11,71 @@
 //   <HidingStache id="handlebar" from="top" at="70%">
 //     <div class="card">…</div>   ← must have an opaque background
 //   </HidingStache>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
-import { useCousin } from '../composables/cousin.js'
-import { useTimers } from '../composables/timers.js'
-import { pointer } from '../composables/pointer.js'
-import { narrowScreen } from '../composables/media.js'
+import { useCousin } from '../composables/cousin'
+import { useTimers } from '../composables/timers'
+import { pointer } from '../composables/pointer'
+import { narrowScreen } from '../composables/media'
+import type { CousinId } from '../types'
 
-const props = defineProps({
-	id: { type: String, required: true }, // a cousin id from content.js
-	from: { type: String, default: 'top' }, // top | left | right
-	at: { type: String, default: '50%' }, // position along that edge
-	size: { type: Number, default: 120 }, // width in px
-})
+/** The edge of the slot the cousin hides behind. */
+type Edge = 'top' | 'left' | 'right'
+
+const {
+	id,
+	from = 'top',
+	at = '50%',
+	size = 120,
+} = defineProps<{
+	/** Which cousin hides here. */
+	id: CousinId
+	/** The edge it peeks over. On a phone, side peeks come over the top instead. */
+	from?: Edge
+	/** Where along that edge, as a CSS length: `70%`. */
+	at?: string
+	/** How wide it is, in pixels. */
+	size?: number
+}>()
 
 // How much of it shows while hiding and while out, as a fraction of its height (top) or
 // width (sides). Side peeks lean out a little (degrees), like peeking round a corner.
-const PEEK = {
+const PEEK: Record<Edge, { rest: number; out: number; lean: number }> = {
 	top: { rest: 0.19, out: 0.94, lean: 0 },
 	left: { rest: 0.27, out: 0.52, lean: -8 },
 	right: { rest: 0.27, out: 0.52, lean: 8 },
 }
 
 // Side peeks would poke off the edge of a phone screen, so they come over the top instead.
-const edge = computed(() => (narrowScreen.value ? 'top' : props.from))
+const edge = computed<Edge>(() => (narrowScreen.value ? 'top' : from))
 const peek = computed(() => PEEK[edge.value])
 
-const { cousin, label, mood, twirl, onFound } = useCousin(props.id)
+const { cousin, label, mood, twirl, reacting, onFound } = useCousin(id)
 
-const spot = ref(null)
-const button = ref(null)
-const peeking = ref(false)
+const spot = useTemplateRef<HTMLElement>('spot')
+const button = useTemplateRef<HTMLButtonElement>('button')
+
+// Out while it's wanted (hovered, focused or tapped), and always while it's still reacting
+// to being found, so it never ducks away mid-celebration.
+const wanted = ref(false)
+const peeking = computed(() => wanted.value || reacting.value)
 const hideTimer = useTimers()
-let busyUntil = 0 // don't duck away mid-reaction
 
 function show() {
 	hideTimer.clear()
-	peeking.value = true
+	wanted.value = true
 }
 
 function hide(delay = 350) {
 	hideTimer.clear()
-	hideTimer.after(delay, () => {
-		const wait = busyUntil - performance.now()
-		if (wait > 0) return hide(wait)
-		peeking.value = false
-		mood.value = 'idle'
-	})
+	hideTimer.after(delay, () => (wanted.value = false))
 }
 
-function onEnter(e) {
+function onEnter(e: PointerEvent) {
 	if (e.pointerType === 'mouse') show()
 }
 
-function onLeave(e) {
+function onLeave(e: PointerEvent) {
 	if (e.pointerType === 'mouse') hide()
 }
 
@@ -77,24 +88,24 @@ function onCoverClick() {
 
 function onClick() {
 	show()
-	busyUntil = performance.now() + onFound()
+	onFound()
 }
 
 // Content that pops out on hover has to be dismissible without moving the pointer.
 // (When it's out because it has keyboard focus, it stays: it's the thing focused.)
-function onKey(e) {
+function onKey(e: KeyboardEvent) {
 	if (e.key === 'Escape' && peeking.value && document.activeElement !== button.value) hide(0)
 }
 
-let observer
+let observer: IntersectionObserver | undefined
 
 onMounted(() => {
 	document.addEventListener('keydown', onKey)
 	// Scrolled away: back into hiding, ready for next time.
 	observer = new IntersectionObserver(([entry]) => {
-		if (!entry.isIntersecting) hide(0)
+		if (!entry?.isIntersecting) hide(0)
 	})
-	observer.observe(spot.value)
+	if (spot.value) observer.observe(spot.value)
 })
 
 onBeforeUnmount(() => {

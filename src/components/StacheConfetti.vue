@@ -1,13 +1,30 @@
-<script setup>
+<script setup lang="ts">
 // A shower of mustaches, every kind there is, when the last cousin is found.
 import { ref, watch } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { hunt } from '../composables/stacheHunt.js'
-import { useTimers } from '../composables/timers.js'
-import { reducedMotion } from '../composables/media.js'
-import { KINDS } from '../assets/mustaches.js'
+import { hunt } from '../composables/stacheHunt'
+import { useTimers } from '../composables/timers'
+import { reducedMotion } from '../composables/media'
+import { KINDS, type MustacheKind } from '../assets/mustaches'
 
-const pieces = ref([])
+/** One falling mustache. */
+interface Piece {
+	id: string
+	kind: MustacheKind
+	/** Where it starts across the window, in %. */
+	left: number
+	/** Its width, in px. */
+	size: number
+	delay: number
+	duration: number
+	/** How far it turns on the way down, in degrees. */
+	spin: number
+	/** How far it drifts sideways, in px. */
+	drift: number
+	red: boolean
+}
+
+const pieces = ref<Piece[]>([])
 const timers = useTimers()
 
 watch(
@@ -17,7 +34,7 @@ watch(
 		const batch = Date.now()
 		pieces.value = Array.from({ length: 48 }, (_, i) => ({
 			id: `${batch}-${i}`,
-			kind: KINDS[i % KINDS.length], // an even mix of every kind
+			kind: KINDS[i % KINDS.length]!, // an even mix of every kind (the % keeps it in range)
 			left: Math.random() * 100,
 			size: 26 + Math.random() * 34,
 			delay: Math.random() * 700,

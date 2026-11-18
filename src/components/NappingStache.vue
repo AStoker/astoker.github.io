@@ -1,21 +1,23 @@
-<script setup>
+<script setup lang="ts">
 // A cousin asleep on my footer. It's always there, in plain sight:
 // waking it up (a click or tap) counts as finding it.
 import StacheCharacter from './StacheCharacter.vue'
-import { useCousin } from '../composables/cousin.js'
-import { hunt } from '../composables/stacheHunt.js'
+import { useCousin } from '../composables/cousin'
+import { hunt } from '../composables/stacheHunt'
+import type { CousinId } from '../types'
 
-const props = defineProps({
-	id: { type: String, required: true }, // a cousin id from content.js
-})
+const { id } = defineProps<{
+	/** Which cousin is asleep here. */
+	id: CousinId
+}>()
 
-const { cousin, label, mood, twirl, timers, celebrate, settle } = useCousin(props.id, { restMood: 'sleep' })
+const { cousin, label, mood, twirl, timers, celebrate, settle } = useCousin(id, { restMood: 'sleep' })
 
 // Unlike the others, it always wakes with a start.
 function wake() {
 	timers.clear()
 	mood.value = 'surprised'
-	if (hunt.find(props.id)) {
+	if (hunt.find(id)) {
 		timers.after(600, celebrate)
 		timers.after(2200, settle)
 	} else {

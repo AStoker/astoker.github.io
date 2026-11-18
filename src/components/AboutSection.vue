@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import PageSection from './PageSection.vue'
 import DwellPeeker from './DwellPeeker.vue'
-import { about } from '../content.js'
+import { about } from '../content'
 </script>
 
 <template>

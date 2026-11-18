@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import PageSection from './PageSection.vue'
 import CaseStudySlot from './CaseStudySlot.vue'
 import HidingStache from './HidingStache.vue'
-import { work } from '../content.js'
+import { work } from '../content'
 
 const slots = Array.from({ length: work.slots }, (_, i) => String(i + 1).padStart(2, '0'))
 // The case study the Handlebar hides behind

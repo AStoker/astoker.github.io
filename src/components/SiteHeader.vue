@@ -1,22 +1,29 @@
-<script setup>
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, useTemplateRef, type ComponentPublicInstance } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { hunt } from '../composables/stacheHunt.js'
-import { useCurrentSection } from '../composables/currentSection.js'
-import { useReplay } from '../composables/timers.js'
-import { profile, nav, sections, huntText } from '../content.js'
+import { hunt } from '../composables/stacheHunt'
+import { useCurrentSection } from '../composables/currentSection'
+import { useReplay } from '../composables/timers'
+import { profile, nav, sections, huntText } from '../content'
 
 // A little mustache slides under whichever link you're on (or pointing at).
 const current = useCurrentSection()
-const hovered = ref(null)
+const hovered = ref<string | null>(null)
 const target = computed(() => hovered.value ?? current.value)
-const linkEls = {}
+const linkEls: Record<string, HTMLElement> = {}
 const indicator = reactive({ x: 0, show: false })
 
 function placeIndicator() {
-	const el = linkEls[target.value]
+	const el = target.value ? linkEls[target.value] : undefined
 	indicator.show = Boolean(el)
 	if (el) indicator.x = el.offsetLeft + el.offsetWidth / 2
+}
+
+// Remembers each link's element, so the indicator can line up under it.
+function linkRef(id: string) {
+	return (el: Element | ComponentPublicInstance | null) => {
+		if (el instanceof HTMLElement) linkEls[id] = el
+	}
 }
 
 watch(target, placeIndicator)
@@ -27,26 +34,27 @@ const onScroll = () => (scrolled.value = window.scrollY > 8)
 // On narrow screens the links fold into a Menu button (CSS decides when).
 // It opens and closes like any disclosure: Escape or a click elsewhere closes it.
 const menuOpen = ref(false)
-const navEl = ref(null)
-const menuButton = ref(null)
+const navEl = useTemplateRef<HTMLElement>('navEl')
+const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
+const inMenu = (target: EventTarget | null) => target instanceof Node && Boolean(navEl.value?.contains(target))
 
-function closeMenu({ refocus = false } = {}) {
+function closeMenu({ refocus = false }: { refocus?: boolean } = {}) {
 	if (!menuOpen.value) return
 	menuOpen.value = false
 	if (refocus) menuButton.value?.focus()
 }
 
-function onNavKey(e) {
+function onNavKey(e: KeyboardEvent) {
 	if (e.key === 'Escape' && menuOpen.value) closeMenu({ refocus: true })
 }
 
-function onDocPointer(e) {
-	if (menuOpen.value && !navEl.value?.contains(e.target)) closeMenu()
+function onDocPointer(e: PointerEvent) {
+	if (menuOpen.value && !inMenu(e.target)) closeMenu()
 }
 
 // Tabbing out of the open menu closes it, so it never sits over the page unattended.
-function onNavFocusOut(e) {
-	if (menuOpen.value && !navEl.value?.contains(e.relatedTarget)) closeMenu()
+function onNavFocusOut(e: FocusEvent) {
+	if (menuOpen.value && !inMenu(e.relatedTarget)) closeMenu()
 }
 
 // The counter gives a little jump whenever something new is found.
@@ -100,7 +108,7 @@ onBeforeUnmount(() => {
 				<ul id="main-nav-links" @pointerleave="hovered = null">
 					<li v-for="section in sections" :key="section.id">
 						<a
-							:ref="(el) => (linkEls[section.id] = el)"
+							:ref="linkRef(section.id)"
 							:href="`#${section.id}`"
 							:aria-current="current === section.id ? 'location' : undefined"
 							@pointerenter="hovered = section.id"

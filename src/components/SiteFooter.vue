@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import NappingStache from './NappingStache.vue'
-import { profile, footer } from '../content.js'
-import { reducedMotion, setReducedMotion } from '../composables/media.js'
+import { profile, footer } from '../content'
+import { reducedMotion, setReducedMotion } from '../composables/media'
 
 const year = new Date().getFullYear()
 </script>

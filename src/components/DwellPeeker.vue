@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // A shy cousin that comes up from the bottom of the window while you stay in a section.
 //
 // How it's revealed (always the same, nothing random):
@@ -9,24 +9,32 @@
 // Clicking it counts as finding it.
 import { ref, watch } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
-import { useCousin } from '../composables/cousin.js'
-import { useCurrentSection } from '../composables/currentSection.js'
-import { useTimers } from '../composables/timers.js'
-import { reducedMotion } from '../composables/media.js'
+import { useCousin } from '../composables/cousin'
+import { useCurrentSection } from '../composables/currentSection'
+import { useTimers } from '../composables/timers'
+import { reducedMotion } from '../composables/media'
+import type { CousinId, SectionId } from '../types'
 
-const props = defineProps({
-	id: { type: String, required: true }, // a cousin id from content.js
-	section: { type: String, required: true }, // the id of the section it lives in
-	seconds: { type: Number, default: 3 },
-})
+const {
+	id,
+	section,
+	seconds = 3,
+} = defineProps<{
+	/** Which cousin it is. */
+	id: CousinId
+	/** The section it lives in. It only comes up while you're there. */
+	section: SectionId
+	/** How long it takes to rise all the way, in seconds. */
+	seconds?: number
+}>()
 
-const { cousin, label, mood, twirl, onFound } = useCousin(props.id)
+const { cousin, label, mood, twirl, onFound } = useCousin(id)
 const currentSection = useCurrentSection()
 const up = ref(false)
 const upTimer = useTimers()
 
 watch(
-	() => currentSection.value === props.section,
+	() => currentSection.value === section,
 	(here) => {
 		upTimer.clear()
 		if (!here) {
@@ -34,7 +42,7 @@ watch(
 			mood.value = 'idle'
 		} else if (reducedMotion.value) {
 			// No slow rise: it simply appears once the time is up.
-			upTimer.after(props.seconds * 1000, () => (up.value = true))
+			upTimer.after(seconds * 1000, () => (up.value = true))
 		} else {
 			up.value = true
 		}

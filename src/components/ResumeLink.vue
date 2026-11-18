@@ -1,7 +1,11 @@
-<script setup>
+<script setup lang="ts">
 // A link that downloads my resume, with a little download arrow in front.
-// The slot replaces the words if a spot needs to say more (like the file size).
-import { resume } from '../content.js'
+import { resume } from '../content'
+
+defineSlots<{
+	/** Replaces the words, if a spot needs to say more (like the file size). */
+	default?(): unknown
+}>()
 </script>
 
 <template>

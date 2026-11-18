@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 // The top of my page: who I am on the left, my family portrait wall on the right.
 import StacheFamily from './StacheFamily.vue'
 import ResumeLink from './ResumeLink.vue'
-import { profile, hero, resume } from '../content.js'
+import { profile, hero, resume } from '../content'
 </script>
 
 <template>

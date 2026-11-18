@@ -1,10 +1,11 @@
-<script setup>
+<script setup lang="ts">
 // A placeholder for a case study I haven't written up yet.
-import { work } from '../content.js'
+import { work } from '../content'
 
-defineProps({
-	num: { type: String, required: true }, // "01", "02"…
-})
+defineProps<{
+	/** Its number, already padded: "01", "02"… */
+	num: string
+}>()
 </script>
 
 <template>

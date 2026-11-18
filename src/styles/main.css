@@ -278,7 +278,7 @@ a {
 
 /* ---------- Less motion ----------
    Set by the system's reduced-motion setting or the switch in my footer
-   (see composables/media.js). Components add their own rules the same way. */
+   (see composables/media.ts). Components add their own rules the same way. */
 
 :root.reduce-motion {
 	scroll-behavior: auto;

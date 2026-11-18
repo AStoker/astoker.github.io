@@ -1,11 +1,11 @@
-<script setup>
+<script setup lang="ts">
 // My experience: a few highlights rather than the whole resume, the short version of the
 // path beside them, then everything I do off the clock. My resume is one click from the top.
 import { ref } from 'vue'
 import PageSection from './PageSection.vue'
 import ResumeLink from './ResumeLink.vue'
 import WorkshopLamp from './WorkshopLamp.vue'
-import { experience, resume } from '../content.js'
+import { experience, resume } from '../content'
 
 const { offClock } = experience
 // The closing line sits across from the workbench, and its last words light up with the lamp.

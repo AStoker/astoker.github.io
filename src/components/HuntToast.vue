@@ -1,11 +1,11 @@
-<script setup>
+<script setup lang="ts">
 // Two toasts at the bottom of the window: a quick "You found …!" after each find, and a
 // bigger celebration once all five are home.
 import { ref, watch, watchEffect } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { hunt, wallCaptionInView } from '../composables/stacheHunt.js'
-import { useTimers } from '../composables/timers.js'
-import { huntText } from '../content.js'
+import { hunt, wallCaptionInView } from '../composables/stacheHunt'
+import { useTimers } from '../composables/timers'
+import { huntText } from '../content'
 
 // ---------- One found ----------
 

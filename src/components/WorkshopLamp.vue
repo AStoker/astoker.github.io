@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // My workbench after hours, with a cousin sitting on the shelf in the dark.
 // Only its eyes show until someone turns the lamp on.
 //
@@ -7,20 +7,22 @@
 //   - In the light it gets a fright, then settles. Clicking it counts as finding it.
 //   - Pull the cord again and it's back in the dark.
 import StacheCharacter from './StacheCharacter.vue'
-import { useCousin } from '../composables/cousin.js'
-import { useReplay } from '../composables/timers.js'
-import { reducedMotion } from '../composables/media.js'
-import { experience } from '../content.js'
+import { useCousin } from '../composables/cousin'
+import { useReplay } from '../composables/timers'
+import { reducedMotion } from '../composables/media'
+import { experience } from '../content'
+import type { CousinId } from '../types'
 
-const props = defineProps({
-	id: { type: String, required: true }, // a cousin id from content.js
-})
+const { id } = defineProps<{
+	/** Which cousin sits on the shelf. */
+	id: CousinId
+}>()
+
+/** Whether the lamp is on. Use `v-model:lit` so other things can light up with it. */
+const lit = defineModel<boolean>('lit', { default: false })
 
 const { offClock } = experience
-const { cousin, label, mood, twirl, timers, onFound } = useCousin(props.id)
-
-// Shared with the page (v-model:lit) so other things can light up with the lamp.
-const lit = defineModel('lit', { type: Boolean, default: false })
+const { cousin, label, mood, twirl, timers, onFound } = useCousin(id)
 const { playing: tugging, play: tug } = useReplay(450)
 
 function pull() {
