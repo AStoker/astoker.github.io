@@ -1,11 +1,14 @@
 <script setup>
 // Experience: a few highlights rather than the whole resume, the short version of the
 // path beside them, then everything off the clock. The resume is one click from the top.
+import { ref } from 'vue'
 import SectionHead from './SectionHead.vue'
 import WorkshopLamp from './WorkshopLamp.vue'
 import { experience, resume } from '../content.js'
 
 const off = experience.offClock
+// The closing line sits across from the workbench, and its last words light up with the lamp.
+const lampOn = ref(false)
 </script>
 
 <template>
@@ -55,22 +58,24 @@ const off = experience.offClock
 		</div>
 
 		<div class="off">
-			<div>
-				<h3 class="off-title">{{ off.title }}</h3>
-				<p class="off-intro">{{ off.intro }}</p>
-				<ul class="crafts">
-					<li v-for="craft in off.crafts" :key="craft.name" class="craft">
-						<h4 class="craft-name">{{ craft.name }}</h4>
-						<p>{{ craft.line }}</p>
-						<p class="at-work">
-							<strong>{{ off.atWorkLabel }}</strong> {{ craft.atWork }}
-						</p>
-					</li>
-				</ul>
-				<p class="closing">{{ off.closing }}</p>
-			</div>
+			<h3 class="off-title">{{ off.title }}</h3>
+			<p class="off-intro">{{ off.intro }}</p>
+			<ul class="crafts">
+				<li v-for="craft in off.crafts" :key="craft.name" class="craft">
+					<h4 class="craft-name">{{ craft.name }}</h4>
+					<p>{{ craft.line }}</p>
+					<p class="at-work">
+						<strong>{{ off.atWorkLabel }}</strong> {{ craft.atWork }}
+					</p>
+				</li>
+			</ul>
 
-			<WorkshopLamp id="dali" class="bench" />
+			<div class="finale">
+				<p class="closing">
+					{{ off.closing }} <span class="light" :class="{ on: lampOn }">{{ off.closingLight }}</span>
+				</p>
+				<WorkshopLamp id="dali" v-model:lit="lampOn" class="bench" />
+			</div>
 		</div>
 	</section>
 </template>
@@ -219,10 +224,6 @@ const off = experience.offClock
 /* ---------- Off the clock ---------- */
 
 .off {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-	gap: clamp(32px, 6vw, 96px);
-	align-items: center;
 	margin-top: clamp(64px, 9vw, 120px);
 }
 
@@ -237,20 +238,23 @@ const off = experience.offClock
 }
 
 .off-intro {
-	max-width: 46ch;
+	max-width: 52ch;
 	margin: 14px 0 0;
 	font-size: 1.1rem;
 	color: var(--ink-soft);
 }
 
+/* Two by two on wide screens, one column on phones */
 .crafts {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: clamp(32px, 6vw, 96px);
 	margin-top: 26px;
-	border-top: 1px solid var(--rule);
 }
 
 .craft {
-	padding: 18px 0;
-	border-bottom: 1px solid var(--rule);
+	padding: 18px 0 20px;
+	border-top: 1px solid var(--rule);
 }
 
 .craft-name {
@@ -281,21 +285,50 @@ const off = experience.offClock
 	color: var(--red-text);
 }
 
+/* The closing line, directly across from the workbench */
+.finale {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: clamp(32px, 6vw, 96px);
+	align-items: center;
+	margin-top: clamp(28px, 4vw, 48px);
+	padding-top: clamp(28px, 4vw, 48px);
+	border-top: 1px solid var(--rule);
+}
+
 .closing {
-	max-width: 30ch;
-	margin: 28px 0 0;
+	max-width: 24ch;
+	margin: 0;
 	font-family: var(--font-display);
-	font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+	font-size: clamp(1.5rem, 3vw, 2.25rem);
 	font-weight: 450;
-	line-height: 1.25;
+	line-height: 1.2;
 	letter-spacing: -0.01em;
 	font-variation-settings: 'SOFT' 100, 'WONK' 0, 'opsz' 72;
 	text-wrap: balance;
 }
 
+/* Lit by the lamp: always dark text on the warm glow, in light mode and dark */
+.light {
+	padding: 0 0.12em;
+	margin: 0 -0.12em;
+	border-radius: 6px;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+	transition:
+		background-color 220ms ease-out,
+		color 220ms ease-out;
+}
+
+.light.on {
+	color: #1b1a17;
+	background-color: #ffe2a2;
+}
+
 @media (max-width: 900px) {
 	.xp,
-	.off {
+	.crafts,
+	.finale {
 		grid-template-columns: 1fr;
 	}
 

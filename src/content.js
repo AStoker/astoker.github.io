@@ -45,7 +45,7 @@ export const experience = {
 	path: [
 		{ years: '2022–now', role: 'Senior developer', org: 'Swampfox' },
 		{ years: '2016–2022', role: 'Core team', org: 'Aurelia, open source' },
-		{ years: '2014–2022', role: 'Developer to UI architect', org: 'Softdocs' },
+		{ years: '2014–2022', role: 'Developer to UI Architect', org: 'Softdocs' },
 		{ years: '2013–2014', role: 'Developer', org: 'Elytus' },
 		{ years: '2013', role: 'B.S. Computer Science, minor in Graphic Design', org: 'Cedarville University' },
 	],
@@ -85,7 +85,7 @@ export const experience = {
 		{
 			title: 'I got a whole department onto one UI',
 			where: 'Softdocs · 2014–2022',
-			body: 'Eight years and three titles, from developer to UI architect. Along the way I moved us from TFVC to Git, built our pipelines in Azure DevOps, led the work to put every app on one accessible UI framework, and ran training sessions for the whole company.',
+			body: 'Eight years and three titles, from developer to UI Architect. Along the way I moved us from TFVC to Git, built our pipelines in Azure DevOps, led the work to put every app on one accessible UI framework, and ran training sessions for the whole company.',
 			tags: ['Architecture', 'Accessibility', 'CI/CD'],
 		},
 		{
@@ -105,7 +105,7 @@ export const experience = {
 			{
 				name: 'Pottery',
 				line: 'Every potter has watched a pot collapse on the wheel. It isn’t a disaster, it’s part of the work. You ball the clay back up, start again, and the next one is better for the mistake.',
-				atWork: 'make mistakes early, and don’t fall in love with the first draft.',
+				atWork: 'iterate, don’t be afraid to fail, and don’t fall in love with the first draft.',
 			},
 			{
 				name: 'Woodworking',
@@ -123,7 +123,8 @@ export const experience = {
 				atWork: 'be patient. Small, careful changes pay off big over time.',
 			},
 		],
-		closing: 'Each one is a different way of looking at a problem, and they all come to work with me. That’s what I bring to anything I build: a fresh light.',
+		closing: 'Each one is a different way of looking at a problem, and they all come to work with me. That’s what I bring to anything I build:',
+		closingLight: 'a fresh light.', // lights up when the workbench lamp is on
 		// The workbench picture next to it
 		lampCord: 'Pull the lamp cord',
 		lampTag: 'pull',

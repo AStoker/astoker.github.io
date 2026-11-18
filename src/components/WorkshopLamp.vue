@@ -26,7 +26,8 @@ const label = computed(() =>
 		: 'Someone was sitting in the dark. Click to find them.',
 )
 
-const lit = ref(false)
+// Shared with the page (v-model:lit) so other things can light up with the lamp.
+const lit = defineModel('lit', { type: Boolean, default: false })
 const tugging = ref(false)
 const mood = ref('idle')
 const twirl = ref(0)
