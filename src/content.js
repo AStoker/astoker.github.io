@@ -216,9 +216,7 @@ export const hunt = {
 
 // The note for anyone who opens the browser's developer console.
 export const devConsole = {
-	hello: 'Curious one, aren’t you?',
-	hunt: (count, names) => `${count} mustaches are hiding on this page: ${names}.`,
-	pitch: 'I like the way you think.',
+	heading: 'Curious one, aren’t you? I like the way you think.',
 	body: 'If you’re the kind of person who opens the console on someone’s portfolio, I have a feeling we’d work well together. I’d love to hear what you’re building.',
 	email: 'Email',
 	linkedin: 'LinkedIn',

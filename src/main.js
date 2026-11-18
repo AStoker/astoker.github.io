@@ -4,7 +4,7 @@ import '@fontsource-variable/instrument-sans'
 import '@fontsource-variable/jetbrains-mono'
 import './styles/main.css'
 import App from './App.vue'
-import { cousins, profile, devConsole as words } from './content.js'
+import { profile, devConsole as words } from './content.js'
 
 createApp(App).mount('#app')
 
@@ -49,10 +49,8 @@ const links = [
 	.join('\n')
 
 console.log(
-	`%c${art}\n\n%c${words.hello}\n%c${words.hunt(cousins.length, cousins.map((c) => c.name).join(', '))}\n\n%c${words.pitch}\n%c${words.body}\n\n${links}`,
+	`%c${art}\n\n%c${words.heading}\n%c${words.body}\n\n${links}`,
 	STYLE.art,
-	STYLE.heading,
-	STYLE.body,
 	STYLE.heading,
 	STYLE.body,
 )
