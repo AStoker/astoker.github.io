@@ -185,6 +185,53 @@ function hideAgain() {
 	order: 1;
 }
 
+/* Phones: the text gets the full width, with Hide them again tucked underneath */
+@media (max-width: 540px) {
+	.big {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-areas:
+			'icon text close'
+			'icon again again';
+		column-gap: 10px;
+		row-gap: 2px;
+		padding: 14px 10px 10px 14px;
+		border-radius: 18px;
+	}
+
+	.big .icon {
+		grid-area: icon;
+		width: 30px;
+		margin-top: 2px;
+	}
+
+	.big .text {
+		grid-area: text;
+		font-size: 0.95rem;
+		line-height: 1.45;
+	}
+
+	.title {
+		font-size: 1.15rem;
+	}
+
+	.buttons {
+		display: contents; /* so the two buttons can sit in the grid on their own */
+	}
+
+	.buttons .close {
+		grid-area: close;
+		align-self: start;
+		margin-top: -6px;
+	}
+
+	.buttons .link {
+		grid-area: again;
+		justify-self: start;
+		padding: 0;
+	}
+}
+
 .toast-enter-active,
 .toast-leave-active {
 	transition:

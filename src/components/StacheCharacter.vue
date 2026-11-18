@@ -10,8 +10,8 @@ const props = defineProps({
 	// Which mustache it wears: any kind from assets/mustaches.js
 	kind: { type: String, default: 'chevron' },
 	// idle | surprised | happy | sleep, and for reacting to things:
-	// suspicious (eyes narrowed, one brow down) | excited (brows up, a little hop) |
-	// nervous (worried brows, eyes wide)
+	// suspicious (eyes narrowed, one brow down) | curious (eyes wide, big pupils, brows up) |
+	// excited (jumping up and down) | nervous (worried brows, eyes wide)
 	mood: { type: String, default: 'idle' },
 	// Pin the pupils one way instead of following the pointer: left | right | up | down
 	look: { type: String, default: null },
@@ -54,8 +54,8 @@ const EYES = [
 ]
 const MAX_LOOK = 3.9 // how far a pupil can travel from the centre of its eye
 const LOOKS = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }
-const OPEN_EYED = ['idle', 'surprised', 'suspicious', 'excited', 'nervous']
-const pupilSize = computed(() => ({ surprised: 3, excited: 5 })[props.mood] ?? 4.4)
+const OPEN_EYED = ['idle', 'surprised', 'suspicious', 'curious', 'excited', 'nervous']
+const pupilSize = computed(() => ({ surprised: 3, curious: 5.6, excited: 5 })[props.mood] ?? 4.4)
 
 const root = ref(null)
 const pupil = reactive({ x: 0, y: 0 })
@@ -287,9 +287,23 @@ onBeforeUnmount(() => {
 	transform: translateY(-3px) rotate(-5deg);
 }
 
-/* Excited: eyes wide, brows high, and a little hop */
+/* Curious: eyes wide open with big pupils, brows up, one higher than the other */
+.is-curious .eye-open {
+	transform: scale(1.22);
+}
+
+.is-curious .brow-l {
+	transform: translateY(-6px) rotate(-6deg);
+}
+
+.is-curious .brow-r {
+	transform: translateY(-4px);
+}
+
+/* Excited: eyes wide, brows high, and jumping up and down: crouch, spring, land, squash */
 .is-excited {
-	animation: hop 420ms cubic-bezier(0.3, 0, 0.5, 1) infinite alternate;
+	transform-origin: 50% 100%;
+	animation: hop 680ms infinite;
 }
 
 .is-excited .eye-open {
@@ -301,8 +315,28 @@ onBeforeUnmount(() => {
 }
 
 @keyframes hop {
-	to {
-		transform: translateY(-7%);
+	0% {
+		transform: translateY(0) scale(1.1, 0.88);
+		animation-timing-function: ease-out;
+	}
+	14% {
+		transform: translateY(0) scale(0.93, 1.09);
+		animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); /* slowing as it rises */
+	}
+	46% {
+		transform: translateY(-32%) scale(1, 1);
+		animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4); /* speeding up as it falls */
+	}
+	74% {
+		transform: translateY(0) scale(0.95, 1.06);
+		animation-timing-function: ease-out;
+	}
+	84% {
+		transform: translateY(0) scale(1.14, 0.84);
+		animation-timing-function: ease-in-out;
+	}
+	100% {
+		transform: translateY(0) scale(1.1, 0.88);
 	}
 }
 

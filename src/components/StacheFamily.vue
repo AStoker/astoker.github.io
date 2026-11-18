@@ -95,7 +95,7 @@ function choose(id, e) {
 // How each cousin takes it, in wall order (repeats if more cousins are added).
 // `look` pins the eyes, `lean` has them edging out already, `run` is the way they bolt.
 const REACTIONS = [
-	{ mood: 'suspicious', look: 'left', run: 'up' }, // the Handlebar
+	{ mood: 'curious', look: 'down', run: 'up' }, // the Handlebar, all eyes on the button
 	{ mood: 'excited', run: 'right' }, // the Dalí
 	{ mood: 'nervous', look: 'left', lean: 'left', run: 'left' }, // the Pencil, halfway out the door
 	{ mood: 'suspicious', look: 'right', run: 'down' }, // the Horseshoe
@@ -162,9 +162,48 @@ async function finish() {
 // Either "Hide them again" button asks through the hunt, so both get the same send-off.
 watch(() => hunt.state.hideRequests, scatter)
 
-onMounted(() => document.addEventListener('click', onDocClick))
+// The celebration toast says what the wall already says, and at the top of the page it
+// sits right on the wall's button. So once the caption is fully in view, the toast steps
+// aside, after a couple of seconds on screen so it isn't missed.
+const TOAST_MIN_MS = 2000
+let captionInView = false
+let celebratedAt = 0
+let toastTimer
+let captionObserver
+
+function toastStepAside() {
+	clearTimeout(toastTimer)
+	if (!hunt.state.celebrating || !captionInView) return
+	const wait = Math.max(0, TOAST_MIN_MS - (performance.now() - celebratedAt))
+	toastTimer = setTimeout(() => {
+		if (captionInView) hunt.state.celebrating = false
+	}, wait)
+}
+
+watch(
+	() => hunt.state.celebrating,
+	(on) => {
+		if (!on) return
+		celebratedAt = performance.now()
+		toastStepAside()
+	},
+)
+
+onMounted(() => {
+	document.addEventListener('click', onDocClick)
+	captionObserver = new IntersectionObserver(
+		([entry]) => {
+			captionInView = entry.intersectionRatio > 0.99
+			toastStepAside()
+		},
+		{ threshold: [0, 1] },
+	)
+	captionObserver.observe(caption.value)
+})
 onBeforeUnmount(() => {
 	document.removeEventListener('click', onDocClick)
+	captionObserver?.disconnect()
+	clearTimeout(toastTimer)
 	clearTimeout(leaveTimer)
 	clearTimeout(hoverTimer)
 	clearTimeout(meTimer)
@@ -240,7 +279,9 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 				{{ says(activeCousin) }}
 			</template>
 			<template v-else-if="active === 'me'">{{ family.meHello }}</template>
-			<template v-else-if="hunt.complete.value">{{ family.done }}</template>
+			<template v-else-if="hunt.complete.value">
+				{{ family.done }} {{ words.allBody }} <a href="#contact">{{ words.allLink }}</a>.
+			</template>
 			<template v-else>{{ family.intro }} {{ prompt }}</template>
 		</p>
 		<div v-if="hunt.complete.value" class="again-wrap" :class="{ out: teasing || phase !== 'idle' }">
@@ -517,6 +558,13 @@ button.tile:focus-visible {
 
 .again-wrap.out .again-peeker {
 	transform: translate(42px, -50%) rotate(10deg);
+}
+
+.caption a {
+	color: var(--ink);
+	text-decoration-color: var(--red);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 3px;
 }
 
 .caption strong {

@@ -55,11 +55,13 @@ wall. Progress is remembered in the browser, and once all five are found the wal
 a **Hide them again** button to start over.
 
 That button has Andrew's mustache tucked behind it, and it leans out when you hover or
-focus the button. Meanwhile each cousin reacts in its own way (suspicious, excited,
-halfway out the door, or fast asleep). Press it, or the one in the celebration toast, and
+focus the button. Meanwhile each cousin reacts in its own way (wide-eyed, jumping with
+excitement, halfway out the door, suspicious, or fast asleep). Press it, or the one in the celebration toast, and
 they all get a fright, then bolt out of their frames before the hunt resets. Each frame is
 a window, so they vanish past its edge. The reactions and directions are `REACTIONS` in
-`src/components/StacheFamily.vue`.
+`src/components/StacheFamily.vue`. The celebration toast steps aside once the wall's
+caption is in view (after at least two seconds), since the wall then says the same thing
+and the toast would otherwise sit on top of the button.
 
 ## Accessibility
 
