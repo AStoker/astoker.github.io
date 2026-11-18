@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import NappingStache from './NappingStache.vue'
-import { profile, footer } from '../content.js'
-import { reducedMotion, setReducedMotion } from '../composables/media.js'
+import { profile, footer } from '../content'
+import { reducedMotion, setReducedMotion } from '../composables/media'
 
 const year = new Date().getFullYear()
 </script>
@@ -16,7 +16,7 @@ const year = new Date().getFullYear()
 				<!-- Stills every blink, breath and wiggle on the page. Starts from the system setting. -->
 				<button
 					type="button"
-					class="motion"
+					class="bare-button motion"
 					:aria-pressed="reducedMotion ? 'true' : 'false'"
 					@click="setReducedMotion(!reducedMotion)"
 				>
@@ -62,8 +62,6 @@ const year = new Date().getFullYear()
 }
 
 .motion {
-	all: unset;
-	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
@@ -71,13 +69,7 @@ const year = new Date().getFullYear()
 	padding: 4px 2px;
 	font-size: 0.95rem;
 	color: var(--ink);
-	cursor: pointer;
 	border-radius: 8px;
-}
-
-.motion:focus-visible {
-	outline: 2px solid var(--focus);
-	outline-offset: 3px;
 }
 
 /* A little switch: outlined when off, filled with the knob across when on */

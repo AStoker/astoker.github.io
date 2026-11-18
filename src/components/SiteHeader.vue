@@ -1,33 +1,29 @@
-<script setup>
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, useTemplateRef, type ComponentPublicInstance } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
-import { profile, hunt as words } from '../content.js'
-
-const links = [
-	{ id: 'work', label: 'Work' },
-	{ id: 'experience', label: 'Experience' },
-	{ id: 'about', label: 'About' },
-	{ id: 'contact', label: 'Contact' },
-]
-
-const hunt = useStacheHunt()
+import { hunt } from '../composables/stacheHunt'
+import { useCurrentSection } from '../composables/currentSection'
+import { useReplay } from '../composables/timers'
+import { profile, nav, sections, huntText } from '../content'
 
 // A little mustache slides under whichever link you're on (or pointing at).
-const active = ref(null)
-const hovered = ref(null)
-const target = computed(() => hovered.value ?? active.value)
-const linkEls = {}
+const current = useCurrentSection()
+const hovered = ref<string | null>(null)
+const target = computed(() => hovered.value ?? current.value)
+const linkEls: Record<string, HTMLElement> = {}
 const indicator = reactive({ x: 0, show: false })
 
 function placeIndicator() {
-	const el = linkEls[target.value]
-	if (!el) {
-		indicator.show = false
-		return
+	const el = target.value ? linkEls[target.value] : undefined
+	indicator.show = Boolean(el)
+	if (el) indicator.x = el.offsetLeft + el.offsetWidth / 2
+}
+
+// Remembers each link's element, so the indicator can line up under it.
+function linkRef(id: string) {
+	return (el: Element | ComponentPublicInstance | null) => {
+		if (el instanceof HTMLElement) linkEls[id] = el
 	}
-	indicator.x = el.offsetLeft + el.offsetWidth / 2
-	indicator.show = true
 }
 
 watch(target, placeIndicator)
@@ -38,54 +34,37 @@ const onScroll = () => (scrolled.value = window.scrollY > 8)
 // On narrow screens the links fold into a Menu button (CSS decides when).
 // It opens and closes like any disclosure: Escape or a click elsewhere closes it.
 const menuOpen = ref(false)
-const navEl = ref(null)
-const menuButton = ref(null)
+const navEl = useTemplateRef<HTMLElement>('navEl')
+const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
+const inMenu = (target: EventTarget | null) => target instanceof Node && Boolean(navEl.value?.contains(target))
 
-function closeMenu({ refocus = false } = {}) {
+function closeMenu({ refocus = false }: { refocus?: boolean } = {}) {
 	if (!menuOpen.value) return
 	menuOpen.value = false
 	if (refocus) menuButton.value?.focus()
 }
 
-function onNavKey(e) {
+function onNavKey(e: KeyboardEvent) {
 	if (e.key === 'Escape' && menuOpen.value) closeMenu({ refocus: true })
 }
 
-function onDocPointer(e) {
-	if (menuOpen.value && !navEl.value?.contains(e.target)) closeMenu()
+function onDocPointer(e: PointerEvent) {
+	if (menuOpen.value && !inMenu(e.target)) closeMenu()
 }
 
 // Tabbing out of the open menu closes it, so it never sits over the page unattended.
-function onNavFocusOut(e) {
-	if (menuOpen.value && !navEl.value?.contains(e.relatedTarget)) closeMenu()
+function onNavFocusOut(e: FocusEvent) {
+	if (menuOpen.value && !inMenu(e.relatedTarget)) closeMenu()
 }
 
-// Bump the counter when something new is found.
-const bump = ref(false)
+// The counter gives a little jump whenever something new is found.
+const { playing: bump, play: playBump } = useReplay(500)
 watch(
-	() => hunt.state.findCount,
-	async () => {
-		bump.value = false
-		await nextTick()
-		requestAnimationFrame(() => (bump.value = true))
-	},
+	() => hunt.lastFound,
+	(cousin) => cousin && playBump(),
 )
 
-let spy
 onMounted(() => {
-	spy = new IntersectionObserver(
-		(entries) => {
-			for (const entry of entries) {
-				if (entry.isIntersecting) active.value = entry.target.id
-				else if (active.value === entry.target.id) active.value = null
-			}
-		},
-		{ rootMargin: '-45% 0px -50% 0px' },
-	)
-	links.forEach(({ id }) => {
-		const section = document.getElementById(id)
-		if (section) spy.observe(section)
-	})
 	window.addEventListener('scroll', onScroll, { passive: true })
 	window.addEventListener('resize', placeIndicator)
 	document.addEventListener('pointerdown', onDocPointer)
@@ -93,7 +72,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-	spy?.disconnect()
 	window.removeEventListener('scroll', onScroll)
 	window.removeEventListener('resize', placeIndicator)
 	document.removeEventListener('pointerdown', onDocPointer)
@@ -103,35 +81,42 @@ onBeforeUnmount(() => {
 <template>
 	<header class="site-header" :class="{ scrolled }">
 		<div class="container inner">
-			<a class="brand" href="#top" :aria-label="`${profile.firstName} ${profile.lastName}, back to top`">
+			<a class="brand" href="#top" :aria-label="`${profile.firstName} ${profile.lastName}, ${nav.home}`">
 				<MustacheIcon class="brand-mark" />
 				<span class="brand-name">{{ profile.firstName }} {{ profile.lastName }}</span>
 			</a>
 
-			<nav ref="navEl" class="nav" :class="{ open: menuOpen }" aria-label="Main" @keydown="onNavKey" @focusout="onNavFocusOut">
+			<nav
+				ref="navEl"
+				class="nav"
+				:class="{ open: menuOpen }"
+				:aria-label="nav.label"
+				@keydown="onNavKey"
+				@focusout="onNavFocusOut"
+			>
 				<button
 					ref="menuButton"
-					class="menu-toggle"
+					class="bare-button menu-toggle"
 					type="button"
 					:aria-expanded="menuOpen ? 'true' : 'false'"
 					aria-controls="main-nav-links"
 					@click="menuOpen = !menuOpen"
 				>
 					<span class="menu-lines" aria-hidden="true"><span /><span /><span /></span>
-					Menu
+					{{ nav.menu }}
 				</button>
 				<ul id="main-nav-links" @pointerleave="hovered = null">
-					<li v-for="link in links" :key="link.id">
+					<li v-for="section in sections" :key="section.id">
 						<a
-							:ref="(el) => (linkEls[link.id] = el)"
-							:href="`#${link.id}`"
-							:aria-current="active === link.id ? 'location' : undefined"
-							@pointerenter="hovered = link.id"
-							@focus="hovered = link.id"
+							:ref="linkRef(section.id)"
+							:href="`#${section.id}`"
+							:aria-current="current === section.id ? 'location' : undefined"
+							@pointerenter="hovered = section.id"
+							@focus="hovered = section.id"
 							@blur="hovered = null"
 							@click="closeMenu()"
 						>
-							{{ link.label }}
+							{{ section.menu }}
 						</a>
 					</li>
 				</ul>
@@ -140,16 +125,16 @@ onBeforeUnmount(() => {
 				</span>
 			</nav>
 
-			<!-- Always visible, so it's clear there's something to find. Jumps to the family lineup. -->
+			<!-- Always visible, so it's clear there's something to find. Jumps to my portrait wall. -->
 			<a
 				class="hunt"
-				:class="{ bump, done: hunt.complete.value }"
+				:class="{ bump, done: hunt.complete }"
 				href="#family"
-				:title="`${words.counter}: ${hunt.count.value} of ${hunt.total}`"
+				:title="`${huntText.counter}: ${hunt.count} of ${hunt.total}`"
 			>
 				<MustacheIcon class="hunt-icon" kind="handlebar" />
-				<span class="visually-hidden">{{ words.counter }}:</span>
-				<span>{{ hunt.count.value }}/{{ hunt.total }}</span>
+				<span class="visually-hidden">{{ huntText.counter }}:</span>
+				<span>{{ hunt.count }}/{{ hunt.total }}</span>
 			</a>
 		</div>
 	</header>
@@ -205,7 +190,7 @@ onBeforeUnmount(() => {
 	font-size: 1.2rem;
 	font-weight: 600;
 	letter-spacing: -0.01em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 24;
+	font-variation-settings: var(--display-axes), 'opsz' 24;
 }
 
 .nav {
@@ -306,8 +291,6 @@ onBeforeUnmount(() => {
 	/* Plain text like the links it stands in for, so it never looks like the
 	   outlined hunt counter beside it */
 	.menu-toggle {
-		all: unset;
-		box-sizing: border-box;
 		display: inline-flex;
 		align-items: center;
 		gap: 10px;
@@ -315,13 +298,10 @@ onBeforeUnmount(() => {
 		padding: 0 6px;
 		font-weight: 550;
 		color: var(--ink);
-		cursor: pointer;
 		border-radius: 8px;
-		-webkit-tap-highlight-color: transparent;
 	}
 
 	.menu-toggle:focus-visible {
-		outline: 2px solid var(--focus);
 		outline-offset: 2px;
 	}
 

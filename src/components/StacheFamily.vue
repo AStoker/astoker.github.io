@@ -1,242 +1,197 @@
-<script setup>
-// The family portrait wall: Andrew's mustache in the big frame, and a small frame
-// for each cousin. A frame is empty (just a faint outline) until that cousin has
-// been found, then they move in.
+<script setup lang="ts">
+// My family portrait wall: my mustache in the big frame, and a small frame for each
+// cousin. A frame is empty (just a faint outline) until that cousin has been found,
+// then they move in.
 //
-// One caption sits under the wall. Point at a frame (or tap it, or tab to it) and
-// the caption switches to that frame's clue, and stays there while you're on the wall,
-// so you can move down and read it. Once you're done with the wall (the mouse leaves,
-// you tap or click elsewhere, or focus moves on) it goes back to the intro. On touch,
-// tapping the same frame again does that too. Screen readers hear the same clue as part
-// of each frame's name, so the caption isn't announced as well.
+// One caption sits under the wall and shows the clue for whichever frame you're on
+// (see composables/frameSelection.ts). Screen readers hear the same clue as part of
+// each frame's name, so the caption isn't announced as well.
 //
 // Once every cousin is found, a "Hide them again" button stays under the caption, with
-// Andrew's mustache tucked behind it. Hover (or focus) the button and each cousin reacts
-// in its own way. Press it (or the one in the celebration toast) and they all get a
+// my mustache tucked behind it. Hover (or focus) the button and each cousin reacts in
+// its own way. Press it (or the one in the celebration toast) and they all get a
 // fright, then bolt out of their frames. Each frame is a window: they vanish past its
 // edge rather than running across the page. Then the hunt resets.
 //
 // The big frame takes four squares of a 3 × 3 grid, which leaves exactly five for cousins.
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
-import { canHover, reducedMotion } from '../composables/media.js'
-import { family, hunt as words } from '../content.js'
+import { hunt, wallCaptionInView } from '../composables/stacheHunt'
+import { useFrameSelection } from '../composables/frameSelection'
+import { useTimers } from '../composables/timers'
+import { canHover, reducedMotion } from '../composables/media'
+import { family, huntText } from '../content'
+import type { Cousin, CousinId, Direction, Mood } from '../types'
 
-const hunt = useStacheHunt()
+/** A frame on the wall: mine, or a cousin's. */
+type Frame = 'me' | CousinId
+
+const wall = useTemplateRef<HTMLElement>('wall')
+const caption = useTemplateRef<HTMLElement>('caption')
+const selection = useFrameSelection<Frame>(wall)
+const { active, hover, unhover, focus, choose, wallEvents } = selection
+const activeCousin = computed(() => hunt.cousins.find((c) => c.id === active.value))
 const prompt = computed(() => (canHover.value ? family.prompt.hover : family.prompt.touch))
 
-// The frame the caption is about. It only changes when another frame is chosen.
-const active = ref(null)
-const activeCousin = computed(() => hunt.cousins.find((c) => c.id === active.value))
+// ---------- My frame ----------
 
-const meMood = ref('idle')
+const meMood = ref<Mood>('idle')
 const meTwirl = ref(0)
-let meTimer
+const meTimers = useTimers()
 
-function pokeMe() {
-	active.value = 'me'
+function laugh() {
 	meMood.value = 'happy'
 	meTwirl.value++
-	clearTimeout(meTimer)
-	meTimer = setTimeout(() => (meMood.value = 'idle'), 1200)
 }
 
-// Only switch when the pointer settles on a frame, so that brushing past other
-// frames on the way somewhere else doesn't change the clue being read.
-let hoverTimer
-
-function hover(id, e) {
-	if (e.pointerType !== 'mouse') return
-	clearTimeout(hoverTimer)
-	hoverTimer = setTimeout(() => (active.value = id), 110)
-}
-
-function unhover() {
-	clearTimeout(hoverTimer)
-}
-
-// Back to the intro when you're done with the wall.
-const wall = ref(null)
-const caption = ref(null)
-let leaveTimer
-
-function onWallEnter(e) {
-	if (e.pointerType === 'mouse') clearTimeout(leaveTimer)
-}
-
-function onWallLeave(e) {
-	if (e.pointerType !== 'mouse') return
-	clearTimeout(hoverTimer)
-	leaveTimer = setTimeout(() => (active.value = null), 600)
-}
-
-function onWallFocusOut(e) {
-	if (!wall.value?.contains(e.relatedTarget)) active.value = null
-}
-
-// A click, not a pointerdown, so scrolling the page on a phone doesn't count.
-function onDocClick(e) {
-	if (active.value && !wall.value?.contains(e.target)) active.value = null
-}
-
-// Touch has no hover, so a tap shows a frame's clue and a second tap puts it away.
-// (A mouse already chose the frame by hovering; a keyboard by focusing it.)
-let lastPointer = 'mouse'
-
-function choose(id, e) {
-	const tapped = e.detail > 0 && lastPointer !== 'mouse'
-	active.value = tapped && active.value === id ? null : id
+function pokeMe() {
+	selection.select('me')
+	meTimers.clear()
+	laugh()
+	meTimers.after(1200, () => (meMood.value = 'idle'))
 }
 
 // ---------- Hide them again ----------
 
-// How each cousin takes it, in wall order (repeats if more cousins are added).
-// `look` pins the eyes, `lean` has them edging out already, `run` is the way they bolt.
-const REACTIONS = [
-	{ mood: 'curious', look: 'down', run: 'up' }, // the Handlebar, all eyes on the button
-	{ mood: 'excited', run: 'right' }, // the Dalí
-	{ mood: 'nervous', look: 'left', lean: 'left', run: 'left' }, // the Pencil, halfway out the door
-	{ mood: 'suspicious', look: 'right', run: 'down' }, // the Horseshoe
-	{ mood: 'sleep', run: 'right' }, // the Walrus sleeps right through it
-]
-const reaction = (i) => REACTIONS[i % REACTIONS.length]
+/** How a cousin takes being teased, then scattered. */
+interface Reaction {
+	/** How it looks while the button is hovered or focused. */
+	mood: Mood
+	/** Where its eyes are pinned while teased (otherwise they follow the pointer). */
+	look?: Direction
+	/** Already edging out of its frame while teased, this way. */
+	lean?: 'left' | 'right'
+	/** The way it bolts when the button is pressed. */
+	run: Direction
+}
+
+// How each cousin takes it. A new cousin won't compile until it has a reaction here.
+const REACTIONS: Record<CousinId, Reaction> = {
+	handlebar: { mood: 'curious', look: 'down', run: 'up' }, // all eyes on the button
+	dali: { mood: 'excited', run: 'right' },
+	pencil: { mood: 'nervous', look: 'left', lean: 'left', run: 'left' }, // halfway out the door
+	horseshoe: { mood: 'suspicious', look: 'right', run: 'down' },
+	walrus: { mood: 'sleep', run: 'right' }, // sleeps right through it
+}
+
+/** idle → teasing (the button is hovered or focused) → startled → running → idle */
+type Phase = 'idle' | 'teasing' | 'startled' | 'running'
+
+/** What a found cousin is doing at one moment. */
+interface Act {
+	mood: Mood
+	look?: Direction
+	lean?: 'left' | 'right'
+	startled?: boolean
+	run?: Direction
+}
+
+const phase = ref<Phase>('idle')
+const scattering = computed(() => phase.value === 'startled' || phase.value === 'running')
+
+// What a found cousin is doing in each phase.
+const ACTING: Record<Phase, (r: Reaction) => Act> = {
+	idle: () => ({ mood: 'idle' }),
+	teasing: (r) => ({ mood: r.mood, look: r.look, lean: r.lean }),
+	startled: (r) => ({ mood: 'surprised', lean: r.lean, startled: true }),
+	running: (r) => ({ mood: 'surprised', look: r.run, lean: r.lean, run: r.run }),
+}
+
+const actors = computed(() =>
+	Object.fromEntries(
+		hunt.cousins.map((cousin) => {
+			const act = ACTING[phase.value](REACTIONS[cousin.id])
+			return [
+				cousin.id,
+				{
+					mood: act.mood,
+					look: act.look ?? null,
+					class: [act.lean && `lean-${act.lean}`, act.startled && 'startled', act.run && `run run-${act.run}`],
+				},
+			]
+		}),
+	) as Record<CousinId, { mood: Mood; look: Direction | null; class: (string | false | undefined)[] }>,
+)
+
+// My mustache behind the button: suspicious of the whole thing, then delighted by it.
+const PEEKER: Record<Phase, { mood: Mood; look: Direction | null }> = {
+	idle: { mood: 'suspicious', look: 'up' },
+	teasing: { mood: 'suspicious', look: 'up' },
+	startled: { mood: 'surprised', look: null },
+	running: { mood: 'happy', look: null },
+}
+const peeker = computed(() => PEEKER[phase.value])
+
+function tease(on: boolean) {
+	if (!scattering.value) phase.value = on ? 'teasing' : 'idle'
+}
+
 const STARTLE_MS = 650
-const RUN_MS = 520 // keep in step with .run in the styles below
+const RUN_MS = 520
 const STAGGER_MS = 80
-
-const teasing = ref(false) // the button is hovered or focused
-const phase = ref('idle') // idle | startled | running
-let scatterTimers = []
-
-function cousinMood(i) {
-	if (phase.value !== 'idle') return 'surprised'
-	return teasing.value ? reaction(i).mood : 'idle'
-}
-
-function cousinLook(i) {
-	if (phase.value === 'running') return reaction(i).run
-	if (phase.value === 'idle' && teasing.value) return reaction(i).look ?? null
-	return null
-}
-
-function actorClass(i) {
-	const { lean, run } = reaction(i)
-	return {
-		[`lean-${lean}`]: lean && (teasing.value || phase.value !== 'idle'),
-		startled: phase.value === 'startled',
-		[`run run-${run}`]: phase.value === 'running',
-	}
-}
-
-const peekerMood = computed(() => ({ idle: 'suspicious', startled: 'surprised', running: 'happy' })[phase.value])
+const scatterTimers = useTimers()
 
 function scatter() {
-	if (phase.value !== 'idle') return
-	if (!hunt.count.value) return finish()
-	active.value = null
+	if (scattering.value) return
+	selection.clear()
 	phase.value = 'startled'
-	scatterTimers.push(
-		setTimeout(() => {
-			phase.value = 'running'
-			meMood.value = 'happy' // Andrew finds this very funny
-			meTwirl.value++
-		}, STARTLE_MS),
-	)
+	scatterTimers.after(STARTLE_MS, () => {
+		phase.value = 'running'
+		laugh() // I find this very funny
+	})
 	// With motion reduced they don't run; they just go once the fright is over.
 	const running = reducedMotion.value ? 150 : RUN_MS + STAGGER_MS * (hunt.cousins.length - 1) + 60
-	scatterTimers.push(setTimeout(finish, STARTLE_MS + running))
+	scatterTimers.after(STARTLE_MS + running, finish)
 }
 
 async function finish() {
 	hunt.reset()
 	phase.value = 'idle'
-	teasing.value = false
-	active.value = null
+	selection.clear()
 	meMood.value = 'idle'
 	await nextTick()
 	caption.value?.focus({ preventScroll: true }) // the button is gone, so land somewhere sensible
 }
 
 // Either "Hide them again" button asks through the hunt, so both get the same send-off.
-watch(() => hunt.state.hideRequests, scatter)
+watch(() => hunt.hideRequests, scatter)
 
-// The celebration toast says what the wall already says, and at the top of the page it
-// sits right on the wall's button. So once the caption is fully in view, the toast steps
-// aside, after a couple of seconds on screen so it isn't missed.
-const TOAST_MIN_MS = 2000
-let captionInView = false
-let celebratedAt = 0
-let toastTimer
-let captionObserver
-
-function toastStepAside() {
-	clearTimeout(toastTimer)
-	if (!hunt.state.celebrating || !captionInView) return
-	const wait = Math.max(0, TOAST_MIN_MS - (performance.now() - celebratedAt))
-	toastTimer = setTimeout(() => {
-		if (captionInView) hunt.state.celebrating = false
-	}, wait)
-}
-
-watch(
-	() => hunt.state.celebrating,
-	(on) => {
-		if (!on) return
-		celebratedAt = performance.now()
-		toastStepAside()
-	},
-)
+// Let the celebration toast know when my caption is fully on screen, so it can step aside.
+let captionObserver: IntersectionObserver | undefined
 
 onMounted(() => {
-	document.addEventListener('click', onDocClick)
 	captionObserver = new IntersectionObserver(
-		([entry]) => {
-			captionInView = entry.intersectionRatio > 0.99
-			toastStepAside()
-		},
+		([entry]) => (wallCaptionInView.value = (entry?.intersectionRatio ?? 0) > 0.99),
 		{ threshold: [0, 1] },
 	)
-	captionObserver.observe(caption.value)
-})
-onBeforeUnmount(() => {
-	document.removeEventListener('click', onDocClick)
-	captionObserver?.disconnect()
-	clearTimeout(toastTimer)
-	clearTimeout(leaveTimer)
-	clearTimeout(hoverTimer)
-	clearTimeout(meTimer)
-	scatterTimers.forEach(clearTimeout)
+	if (caption.value) captionObserver.observe(caption.value)
 })
 
-const status = (cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
-const says = (cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
+onBeforeUnmount(() => {
+	captionObserver?.disconnect()
+	wallCaptionInView.value = false
+})
+
+const status = (cousin: Cousin) => (hunt.isFound(cousin.id) ? family.found : family.hiding)
+const says = (cousin: Cousin) => (hunt.isFound(cousin.id) ? cousin.found : cousin.clue)
 // "Still hiding" needs a full stop when read aloud; "Found!" already has one.
-const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
+const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`)
 </script>
 
 <template>
-	<section
-		id="family"
-		ref="wall"
-		class="family"
-		aria-labelledby="family-title"
-		@pointerenter="onWallEnter"
-		@pointerleave="onWallLeave"
-		@focusout="onWallFocusOut"
-	>
+	<section id="family" ref="wall" class="family" aria-labelledby="family-title" v-on="wallEvents">
 		<h2 id="family-title" class="visually-hidden">{{ family.title }}</h2>
-		<ul class="frames" :class="{ scattering: phase !== 'idle' }" @pointerdown="lastPointer = $event.pointerType">
+		<ul class="frames" :class="{ scattering }" :style="{ '--run-ms': `${RUN_MS}ms` }">
 			<li class="frame me" :class="{ active: active === 'me' }">
 				<button
 					type="button"
-					class="tile"
-					:aria-label="`${family.me.name}: ${family.me.note}. Click to make it twirl.`"
+					class="bare-button tile"
+					:aria-label="family.me.label"
 					@click="pokeMe"
 					@pointerenter="hover('me', $event)"
 					@pointerleave="unhover"
-					@focus="active = 'me'"
+					@focus="focus('me', $event)"
 				>
 					<StacheCharacter class="me-face" :kind="family.me.kind" fit="face" :mood="meMood" :twirl="meTwirl" />
 					<span class="tag">{{ family.me.name }}</span>
@@ -251,20 +206,26 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 			>
 				<button
 					type="button"
-					class="tile"
+					class="bare-button tile"
 					:aria-label="`${cousin.name}. ${sentence(status(cousin))} ${says(cousin)}`"
 					@click="choose(cousin.id, $event)"
 					@pointerenter="hover(cousin.id, $event)"
 					@pointerleave="unhover"
-					@focus="active = cousin.id"
+					@focus="focus(cousin.id, $event)"
 				>
 					<span
 						v-if="hunt.isFound(cousin.id)"
 						class="actor"
-						:class="actorClass(i)"
+						:class="actors[cousin.id].class"
 						:style="phase === 'running' ? { animationDelay: `${i * STAGGER_MS}ms` } : null"
 					>
-						<StacheCharacter class="face" :kind="cousin.kind" fit="face" :mood="cousinMood(i)" :look="cousinLook(i)" />
+						<StacheCharacter
+							class="face"
+							:kind="cousin.kind"
+							fit="face"
+							:mood="actors[cousin.id].mood"
+							:look="actors[cousin.id].look"
+						/>
 					</span>
 					<MustacheIcon v-else class="ghost" :kind="cousin.kind" />
 					<span class="tag">{{ cousin.name }}</span>
@@ -279,26 +240,26 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 				{{ says(activeCousin) }}
 			</template>
 			<template v-else-if="active === 'me'">{{ family.meHello }}</template>
-			<template v-else-if="hunt.complete.value">
-				{{ family.done }} {{ words.allBody }} <a href="#contact">{{ words.allLink }}</a>.
+			<template v-else-if="hunt.complete">
+				{{ family.done }} {{ huntText.allBody }} <a href="#contact">{{ huntText.allLink }}</a>.
 			</template>
 			<template v-else>{{ family.intro }} {{ prompt }}</template>
 		</p>
 		<!-- Always takes its space, so the wall doesn't shift when the button comes and goes -->
-		<div class="again-wrap" :class="{ out: teasing || phase !== 'idle', off: !hunt.complete.value }">
-			<span v-if="hunt.complete.value" class="again-peeker" aria-hidden="true">
-				<StacheCharacter :kind="family.me.kind" :mood="peekerMood" :look="phase === 'idle' ? 'up' : null" :rotation="10" />
+		<div class="again-wrap" :class="{ out: phase !== 'idle', off: !hunt.complete }">
+			<span v-if="hunt.complete" class="again-peeker" aria-hidden="true">
+				<StacheCharacter :kind="family.me.kind" :mood="peeker.mood" :look="peeker.look" :rotation="10" />
 			</span>
 			<button
 				type="button"
 				class="btn btn-ghost again"
 				@click="hunt.requestHide()"
-				@pointerenter="teasing = true"
-				@pointerleave="teasing = false"
-				@focus="teasing = true"
-				@blur="teasing = false"
+				@pointerenter="tease(true)"
+				@pointerleave="tease(false)"
+				@focus="tease(true)"
+				@blur="tease(false)"
 			>
-				{{ words.reset }}
+				{{ huntText.reset }}
 			</button>
 		</div>
 	</section>
@@ -320,10 +281,8 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 }
 
 .tile {
-	all: unset;
 	position: relative;
 	display: block;
-	box-sizing: border-box;
 	width: 100%;
 	aspect-ratio: 1;
 	border: 1.5px dashed var(--rule-strong);
@@ -334,18 +293,8 @@ const sentence = (text) => (/[.!?]$/.test(text) ? text : `${text}.`)
 		transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-button.tile {
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
-
-button.tile:hover {
+.tile:hover {
 	transform: translateY(-2px);
-}
-
-button.tile:focus-visible {
-	outline: 2px solid var(--focus);
-	outline-offset: 3px;
 }
 
 .frame.found .tile,
@@ -445,9 +394,9 @@ button.tile:focus-visible {
 	}
 }
 
-/* A quick step back, then gone. Keep the duration in step with RUN_MS. */
+/* A quick step back, then gone. --run-ms is set from RUN_MS in the script. */
 .run {
-	animation: 520ms cubic-bezier(0.5, -0.4, 0.85, 0.4) forwards;
+	animation: var(--run-ms) cubic-bezier(0.5, -0.4, 0.85, 0.4) forwards;
 }
 
 .run-up {
@@ -514,9 +463,8 @@ button.tile:focus-visible {
 	text-transform: none;
 	text-align: left;
 	color: var(--on-red);
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 24;
+	font-variation-settings: var(--display-axes), 'opsz' 24;
 }
-
 
 .family {
 	container-type: inline-size; /* so the caption can size itself to the wall */
@@ -542,7 +490,7 @@ button.tile:focus-visible {
 	outline: none; /* only focused by script, after hiding them again */
 }
 
-/* Hide them again, with Andrew's mustache tucked behind it. It leans out on hover. */
+/* Hide them again, with my mustache tucked behind it. It leans out on hover. */
 .again-wrap {
 	position: relative;
 	display: inline-block;
@@ -615,7 +563,7 @@ button.tile:focus-visible {
 	transition: none;
 }
 
-:root.reduce-motion button.tile:hover {
+:root.reduce-motion .tile:hover {
 	transform: none;
 }
 

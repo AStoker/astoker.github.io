@@ -1,12 +1,12 @@
-// Regenerates src/assets/mustaches.js.
+// Regenerates src/assets/mustaches.ts, every mustache on my site.
 //
-//   node tools/generate-mustache.mjs
+//   node tools/generate-mustache.ts
 //
 // Every mustache is drawn the same way: a centreline for the right half, plus how
 // far the hair extends above and below that line along the way. The script turns
 // that into one filled outline. The site mirrors it to get the left half.
 //
-// To reshape one, edit its entry in STYLES and run the script. To add a new kind,
+// To reshape one, I edit its entry in STYLES and run the script. To add a new kind,
 // add an entry; it becomes available everywhere as <MustacheIcon kind="..."> and
 // <StacheCharacter kind="...">, and joins the confetti.
 //
@@ -19,9 +19,30 @@
 
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { resolve, dirname } from 'node:path'
+
+type Point = [x: number, y: number]
+/** One cubic bézier: start, two control points, end. */
+type Segment = [start: Point, control1: Point, control2: Point, end: Point]
+/** How thick the hair is at a point along the centreline: [position 0..1, thickness]. */
+type Key = [position: number, thickness: number]
+
+/** How to draw one kind of mustache: its right half, as a line with hair either side. */
+interface Style {
+	/** The middle of the right half, as one or more joined bézier segments. */
+	centerline: Segment[]
+	/** How far the hair reaches above the line, along its length. */
+	top: Key[]
+	/** How far the hair reaches below the line, along its length. */
+	bottom: Key[]
+	/** A scalloped lower edge (bristles), from `from` to `to` along the line. */
+	fringe?: { from: number; to: number; teeth: number; depth: number }
+	/** Points along each edge of the outline. More for fiddly shapes. */
+	samples?: number
+}
 
 const STYLES = {
-	// Neat, full and straight: stops at the corners of the mouth.
+	// Mine. Neat, full and straight: stops at the corners of the mouth.
 	chevron: {
 		centerline: [[[56, 16.2], [66, 15.6], [79, 17.2], [91.5, 23.6]]],
 		top: [[0, 4.6], [0.28, 6.4], [0.7, 4.7], [1, 1.3]],
@@ -74,24 +95,23 @@ const STYLES = {
 		top: [[0, 1.8], [0.25, 2.7], [0.6, 1.6], [1, 0.3]],
 		bottom: [[0, 1.8], [0.25, 2.7], [0.6, 1.6], [1, 0.3]],
 	},
-}
+} satisfies Record<string, Style>
 
 const DENSE = 240 // samples per bezier segment when measuring the centreline
 const DEFAULT_SAMPLES = 72 // points along each edge of the finished outline
 
-const bezier = (a, b, c, d, t) => {
+const bezier = (a: Point, b: Point, c: Point, d: Point, t: number): Point => {
 	const u = 1 - t
-	return [0, 1].map(
-		(i) => u * u * u * a[i] + 3 * u * u * t * b[i] + 3 * u * t * t * c[i] + t * t * t * d[i],
-	)
+	const axis = (i: 0 | 1) => u * u * u * a[i] + 3 * u * u * t * b[i] + 3 * u * t * t * c[i] + t * t * t * d[i]
+	return [axis(0), axis(1)]
 }
 
-// Smooth curve through [position, value] keys that never overshoots them.
-function curve(keys) {
+/** A smooth curve through [position, value] keys that never overshoots them. */
+function curve(keys: Key[]): (x: number) => number {
 	const xs = keys.map((k) => k[0])
 	const ys = keys.map((k) => k[1])
 	const n = keys.length
-	const d = []
+	const d: number[] = []
 	for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]))
 	const m = [d[0]]
 	for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2)
@@ -109,7 +129,7 @@ function curve(keys) {
 			m[i + 1] = (3 / h) * b * d[i]
 		}
 	}
-	return (x) => {
+	return (x: number) => {
 		let i = 0
 		while (i < n - 2 && x > xs[i + 1]) i++
 		const h = xs[i + 1] - xs[i]
@@ -125,9 +145,10 @@ function curve(keys) {
 	}
 }
 
-function build(style) {
+/** Turns a style into the outline of its right half, and the bounds of the whole mustache. */
+function build(style: Style): { half: string; box: number[] } {
 	// Measure the centreline.
-	const dense = []
+	const dense: Point[] = []
 	style.centerline.forEach((seg, i) => {
 		for (let k = i ? 1 : 0; k <= DENSE; k++) dense.push(bezier(...seg, k / DENSE))
 	})
@@ -135,11 +156,11 @@ function build(style) {
 	for (let i = 1; i < dense.length; i++) {
 		lengths.push(lengths[i - 1] + Math.hypot(dense[i][0] - dense[i - 1][0], dense[i][1] - dense[i - 1][1]))
 	}
-	const total = lengths.at(-1)
+	const total = lengths[lengths.length - 1]
 
 	// Walk it in equal steps, noting position and direction at each.
 	const count = style.samples ?? DEFAULT_SAMPLES
-	const at = (dist) => {
+	const at = (dist: number) => {
 		let i = 1
 		while (i < dense.length - 1 && lengths[i] < dist) i++
 		const span = lengths[i] - lengths[i - 1] || 1
@@ -152,7 +173,7 @@ function build(style) {
 
 	const top = curve(style.top)
 	const bottomBase = curve(style.bottom)
-	const bottom = (s) => {
+	const bottom = (s: number) => {
 		const w = bottomBase(s)
 		const f = style.fringe
 		if (!f || s < f.from || s > f.to) return w
@@ -162,8 +183,8 @@ function build(style) {
 		return w * (1 - f.depth * fade * gap)
 	}
 
-	const upper = []
-	const lower = []
+	const upper: Point[] = []
+	const lower: Point[] = []
 	for (let i = 0; i <= count; i++) {
 		const s = i / count
 		const p = at(s * total)
@@ -171,8 +192,8 @@ function build(style) {
 		lower.push([p.x - p.dy * bottom(s), p.y + p.dx * bottom(s)])
 	}
 
-	const f = (v) => +v.toFixed(2)
-	const pt = ([x, y]) => `${f(x)} ${f(y)}`
+	const f = (v: number) => +v.toFixed(2)
+	const pt = ([x, y]: Point) => `${f(x)} ${f(y)}`
 	const tip = f((top(1) + bottom(1)) / 2)
 	const back = lower.slice().reverse()
 	const half =
@@ -185,31 +206,56 @@ function build(style) {
 	const maxX = Math.max(...all.map((p) => p[0])) + tip
 	const minY = Math.min(...all.map((p) => p[1])) - tip
 	const maxY = Math.max(...all.map((p) => p[1])) + tip
-	const r = (v) => +v.toFixed(1)
+	const r = (v: number) => +v.toFixed(1)
 	const box = [r(120 - maxX), r(minY), r(2 * maxX - 120), r(maxY - minY)]
 
 	return { half, box }
 }
 
-const entries = Object.entries(STYLES).map(([kind, style]) => {
-	const { half, box } = build(style)
-	return `\t${kind}: {\n\t\tbox: [${box.join(', ')}],\n\t\thalf: '${half}',\n\t},`
-})
+/** The contents of src/assets/mustaches.ts. A test checks the committed file still matches. */
+export function generate(): string {
+	const kinds = Object.keys(STYLES)
+	const entries = Object.entries(STYLES).map(([kind, style]) => {
+		const { half, box } = build(style)
+		return `\t${kind}: {\n\t\tbox: [${box.join(', ')}],\n\t\thalf: '${half}',\n\t},`
+	})
 
-const out = `// Every kind of mustache on the site. Each is drawn as its right half in a
-// 120-unit-wide box; the left half is the same path mirrored around x = 60.
-// \`box\` is the bounds of the whole mustache: [x, y, width, height].
-// Generated by tools/generate-mustache.mjs; edit that file rather than this one.
-export const MUSTACHES = {
+	return `// Every kind of mustache on the site.
+// Generated by tools/generate-mustache.ts; edit that file rather than this one.
+
+/**
+ * A kind of mustache. Any of them can be drawn with <MustacheIcon> or <StacheCharacter>.
+ * One small step for facial hair. One giant leap for mustache-kind.
+ */
+export type MustacheKind = ${kinds.map((k) => `'${k}'`).join(' | ')}
+
+/**
+ * One mustache, drawn as its right half in a 120-unit-wide box. The left half is the same
+ * path mirrored around x = 60.
+ */
+export interface Mustache {
+	/** The bounds of the whole mustache (both halves). */
+	box: [x: number, y: number, width: number, height: number]
+	/** An SVG path for the right half. */
+	half: string
+}
+
+export const MUSTACHES: Record<MustacheKind, Mustache> = {
 ${entries.join('\n')}
 }
 
-export const KINDS = Object.keys(MUSTACHES)
-
-// Point the halves pivot around when a mustache twirls (just under the nose).
-export const PIVOT = { x: 60, y: 17.5 }
+/** Every kind, in order: mine first. */
+export const KINDS: readonly MustacheKind[] = [${kinds.map((k) => `'${k}'`).join(', ')}]
 `
+}
 
-const target = fileURLToPath(new URL('../src/assets/mustaches.js', import.meta.url))
-writeFileSync(target, out)
-console.log(`Wrote ${target}: ${Object.keys(STYLES).join(', ')} (${out.length} chars)`)
+const HERE = fileURLToPath(import.meta.url)
+/** Where the generated file goes. */
+export const TARGET = resolve(dirname(HERE), '../src/assets/mustaches.ts')
+
+// Only write the file when I run this script, not when a test imports it.
+if (process.argv[1] && resolve(process.argv[1]) === HERE) {
+	const out = generate()
+	writeFileSync(TARGET, out)
+	console.log(`Wrote ${TARGET}: ${Object.keys(STYLES).join(', ')} (${out.length} chars)`)
+}

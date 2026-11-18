@@ -1,15 +1,6 @@
-import { createApp } from 'vue'
-import '@fontsource-variable/fraunces/full.css'
-import '@fontsource-variable/instrument-sans'
-import '@fontsource-variable/jetbrains-mono'
-import './styles/main.css'
-import App from './App.vue'
-import { profile, devConsole as words } from './content.js'
+// For anyone who opens the dev tools: my mustache, eyes and all, then a note.
+import { profile, devConsole } from './content'
 
-createApp(App).mount('#app')
-
-// For anyone who opens the dev tools: Andrew's mustache, eyes and all, then a note.
-//
 // The art is drawn in half-block characters from the real chevron shape. Only the left
 // half is written out; each line is mirrored to make the right half, so the two sides
 // always line up. (Every block character used here looks the same flipped.) Keep every
@@ -41,15 +32,15 @@ const STYLE = {
 }
 
 const links = [
-	profile.email && `${words.email}: ${profile.email}`,
-	profile.linkedin && `${words.linkedin}: ${profile.linkedin}`,
-	`${words.source}: ${words.sourceUrl}`,
+	profile.email && `${devConsole.email}: ${profile.email}`,
+	profile.linkedin && `${devConsole.linkedin}: ${profile.linkedin}`,
+	`${devConsole.source}: ${devConsole.sourceUrl}`,
 ]
 	.filter(Boolean)
 	.join('\n')
 
 console.log(
-	`%c${art}\n\n%c${words.heading}\n%c${words.body}\n\n${links}`,
+	`%c${art}\n\n%c${devConsole.heading}\n%c${devConsole.body}\n\n${links}`,
 	STYLE.art,
 	STYLE.heading,
 	STYLE.body,

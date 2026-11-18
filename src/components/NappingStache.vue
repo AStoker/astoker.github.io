@@ -1,51 +1,34 @@
-<script setup>
-// A cousin asleep on the footer. It's always there, in plain sight:
+<script setup lang="ts">
+// A cousin asleep on my footer. It's always there, in plain sight:
 // waking it up (a click or tap) counts as finding it.
-import { ref, computed } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
+import { useCousin } from '../composables/cousin'
+import { hunt } from '../composables/stacheHunt'
+import type { CousinId } from '../types'
 
-const props = defineProps({
-	id: { type: String, required: true },
-})
+const { id } = defineProps<{
+	/** Which cousin is asleep here. */
+	id: CousinId
+}>()
 
-const hunt = useStacheHunt()
-const cousin = hunt.cousin(props.id)
-const found = computed(() => hunt.isFound(props.id))
-const label = computed(() =>
-	found.value
-		? `${cousin.name}, asleep. You already found this one. Click to wake it anyway.`
-		: 'Someone is asleep here. Click to wake them up.',
-)
+const { cousin, label, mood, twirl, timers, celebrate, settle } = useCousin(id, { restMood: 'sleep' })
 
-const mood = ref('sleep')
-const twirl = ref(0)
-let timers = []
-
-function after(ms, fn) {
-	timers.push(setTimeout(fn, ms))
-}
-
+// Unlike the others, it always wakes with a start.
 function wake() {
-	timers.forEach(clearTimeout)
-	timers = []
-	const isNew = hunt.find(props.id)
+	timers.clear()
 	mood.value = 'surprised'
-	if (isNew) {
-		after(600, () => {
-			mood.value = 'happy'
-			twirl.value++
-		})
-		after(2200, () => (mood.value = 'sleep'))
+	if (hunt.find(id)) {
+		timers.after(600, celebrate)
+		timers.after(2200, settle)
 	} else {
-		// Already found: grumpy, straight back to sleep.
-		after(900, () => (mood.value = 'sleep'))
+		// Already found, so it's grumpy and goes straight back to sleep.
+		timers.after(900, settle)
 	}
 }
 </script>
 
 <template>
-	<button class="napper" :class="{ asleep: mood === 'sleep' }" type="button" :aria-label="label" @click="wake">
+	<button class="bare-button napper" :class="{ asleep: mood === 'sleep' }" type="button" :aria-label="label" @click="wake">
 		<span class="zzz" aria-hidden="true"><span>z</span><span>z</span><span>z</span></span>
 		<StacheCharacter :kind="cousin.kind" :mood="mood" :twirl="twirl" />
 	</button>
@@ -53,17 +36,13 @@ function wake() {
 
 <style scoped>
 .napper {
-	all: unset;
 	position: relative;
 	display: block;
 	width: 112px;
-	cursor: pointer;
 	border-radius: 10px;
-	-webkit-tap-highlight-color: transparent;
 }
 
 .napper:focus-visible {
-	outline: 2px solid var(--focus);
 	outline-offset: 4px;
 }
 

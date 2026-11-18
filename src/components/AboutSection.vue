@@ -1,12 +1,11 @@
-<script setup>
-import SectionHead from './SectionHead.vue'
+<script setup lang="ts">
+import PageSection from './PageSection.vue'
 import DwellPeeker from './DwellPeeker.vue'
-import { about } from '../content.js'
+import { about } from '../content'
 </script>
 
 <template>
-	<section id="about" class="section container" aria-labelledby="about-title">
-		<SectionHead id="about-title" num="03" :title="about.title" />
+	<PageSection :section="about">
 
 		<div class="about-grid">
 			<p class="statement">{{ about.statement }}</p>
@@ -21,8 +20,8 @@ import { about } from '../content.js'
 			</div>
 		</div>
 
-		<DwellPeeker id="pencil" watch="#about" :seconds="3" />
-	</section>
+		<DwellPeeker id="pencil" :section="about.id" :seconds="3" />
+	</PageSection>
 </template>
 
 <style scoped>
@@ -40,7 +39,7 @@ import { about } from '../content.js'
 	font-weight: 420;
 	line-height: 1.1;
 	letter-spacing: -0.02em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 0, 'opsz' 96;
+	font-variation-settings: var(--display-axes-calm), 'opsz' 96;
 	text-wrap: balance;
 }
 

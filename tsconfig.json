@@ -1,0 +1,8 @@
+// Three projects, checked together by `yarn typecheck`:
+//   app    the site itself (browser only, no Node APIs)
+//   node   vite.config.ts and the tools I run with Node
+//   vitest the tests, which see both
+{
+	"files": [],
+	"references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }, { "path": "./tsconfig.vitest.json" }]
+}

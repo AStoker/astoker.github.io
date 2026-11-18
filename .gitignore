@@ -5,3 +5,5 @@ Thumbs.db
 .idea
 .vscode
 package-lock.json
+coverage
+.claude/launch.json

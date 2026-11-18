@@ -1,38 +1,59 @@
-<script setup>
-import { ref, computed, watch } from 'vue'
+<script setup lang="ts">
+// Two toasts at the bottom of the window: a quick "You found …!" after each find, and a
+// bigger celebration once all five are home.
+import { ref, watch, watchEffect } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
-import { hunt as words } from '../content.js'
+import { hunt, wallCaptionInView } from '../composables/stacheHunt'
+import { useTimers } from '../composables/timers'
+import { huntText } from '../content'
 
-const { state, count, total, complete, cousin, requestHide } = useStacheHunt()
-const show = ref(false)
-const latest = computed(() => cousin(state.lastFound))
-let timer
+// ---------- One found ----------
+
+const showFound = ref(false)
+const foundTimer = useTimers()
 
 watch(
-	() => state.findCount,
-	() => {
-		clearTimeout(timer)
-		if (complete.value) {
-			show.value = false // the celebration takes over, and nothing's left behind once it closes
-			return
-		}
-		show.value = true
-		clearTimeout(timer)
-		timer = setTimeout(() => (show.value = false), 3000)
+	() => hunt.lastFound,
+	(cousin) => {
+		foundTimer.clear()
+		// The last one gets the celebration instead, and nothing's left behind once it closes.
+		showFound.value = Boolean(cousin) && !hunt.complete
+		if (showFound.value) foundTimer.after(3000, () => (showFound.value = false))
 	},
 )
+
+// ---------- All found ----------
+
+const celebrating = ref(false)
+const settled = ref(false) // it's been up long enough not to be missed
+const settleTimer = useTimers()
+
+watch(
+	() => hunt.complete,
+	(done) => {
+		celebrating.value = done
+		settled.value = false
+		settleTimer.clear()
+		if (done) settleTimer.after(2000, () => (settled.value = true))
+	},
+)
+
+// The wall's caption says the same thing, and at the top of the page this toast sits right
+// on the wall's button. So once the caption is fully in view, the toast steps aside.
+watchEffect(() => {
+	if (settled.value && wallCaptionInView.value) celebrating.value = false
+})
 
 // Back up to the portrait wall, where they all run off before the hunt resets.
 // The send-off waits until the scroll lands, so it isn't over before you get there.
 function hideAgain() {
-	state.celebrating = false
-	if (window.scrollY < 10) return requestHide()
+	celebrating.value = false
+	if (window.scrollY < 10) return hunt.requestHide()
 	let sent = false
 	const send = () => {
 		if (sent) return
 		sent = true
-		requestHide()
+		hunt.requestHide()
 	}
 	window.addEventListener('scrollend', send, { once: true })
 	setTimeout(send, 1200) // for browsers without scrollend
@@ -43,25 +64,26 @@ function hideAgain() {
 <template>
 	<div class="region" aria-live="polite">
 		<Transition name="toast">
-			<div v-if="state.celebrating" class="toast big">
+			<div v-if="celebrating" class="toast big">
 				<MustacheIcon class="icon" />
 				<div class="text">
-					<p class="title">{{ words.allTitle }}</p>
+					<p class="title">{{ huntText.allTitle }}</p>
 					<p>
-						{{ words.allBody }} <a href="#contact" @click="state.celebrating = false">{{ words.allLink }}</a>.
+						{{ huntText.allBody }} <a href="#contact" @click="celebrating = false">{{ huntText.allLink }}</a>.
 					</p>
 				</div>
 				<div class="buttons">
-					<button type="button" class="link" @click="hideAgain">{{ words.reset }}</button>
-					<button type="button" class="close" :aria-label="words.close" @click="state.celebrating = false">
+					<button type="button" class="bare-button link" @click="hideAgain">{{ huntText.reset }}</button>
+					<button type="button" class="bare-button close" :aria-label="huntText.close" @click="celebrating = false">
 						<span aria-hidden="true">×</span>
 					</button>
 				</div>
 			</div>
-			<div v-else-if="show && latest" class="toast">
-				<MustacheIcon class="icon" :kind="latest.kind" />
+			<div v-else-if="showFound && hunt.lastFound" class="toast">
+				<MustacheIcon class="icon" :kind="hunt.lastFound.kind" />
 				<p>
-					{{ words.foundOne(latest.name) }} <span class="count">{{ count }} of {{ total }}</span>
+					{{ huntText.foundOne(hunt.lastFound.name) }}
+					<span class="count">{{ hunt.count }} of {{ hunt.total }}</span>
 				</p>
 			</div>
 		</Transition>
@@ -133,7 +155,7 @@ function hideAgain() {
 	font-family: var(--font-display);
 	font-size: 1.3rem;
 	font-weight: 600;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1;
+	font-variation-settings: var(--display-axes);
 }
 
 .big a {
@@ -152,23 +174,18 @@ function hideAgain() {
 }
 
 .buttons button {
-	all: unset;
-	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	min-height: 32px;
-	cursor: pointer;
 	color: inherit;
 	border-radius: 8px;
 }
 
 .buttons button:focus-visible {
-	outline: 2px solid var(--focus);
 	outline-offset: 1px;
 }
 
-/* .buttons in front so these beat the `all: unset` above */
 .buttons .link {
 	padding: 0 6px;
 	font-size: 0.85rem;

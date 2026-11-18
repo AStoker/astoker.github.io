@@ -1,89 +1,60 @@
-<script setup>
+<script setup lang="ts">
 // A shy cousin that comes up from the bottom of the window while you stay in a section.
 //
 // How it's revealed (always the same, nothing random):
-//   - While the watched section is the one in the middle of the screen, it rises
-//     slowly and is fully up after `seconds`. You can watch it coming.
+//   - While its section is the one in the middle of the screen, it rises slowly and is
+//     fully up after `seconds`. You can watch it coming.
 //   - Scroll to another section and it ducks straight back down.
 //   - Come back and it starts over.
 // Clicking it counts as finding it.
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
-import { reducedMotion } from '../composables/media.js'
+import { useCousin } from '../composables/cousin'
+import { useCurrentSection } from '../composables/currentSection'
+import { useTimers } from '../composables/timers'
+import { reducedMotion } from '../composables/media'
+import type { CousinId, SectionId } from '../types'
 
-const props = defineProps({
-	id: { type: String, required: true }, // a cousin id from content.js
-	watch: { type: String, required: true }, // selector for the section it lives in
-	seconds: { type: Number, default: 3 },
-})
+const {
+	id,
+	section,
+	seconds = 3,
+} = defineProps<{
+	/** Which cousin it is. */
+	id: CousinId
+	/** The section it lives in. It only comes up while you're there. */
+	section: SectionId
+	/** How long it takes to rise all the way, in seconds. */
+	seconds?: number
+}>()
 
-const hunt = useStacheHunt()
-const cousin = hunt.cousin(props.id)
-const found = computed(() => hunt.isFound(props.id))
-const label = computed(() =>
-	found.value
-		? `${cousin.name}. You already found this one. Click to make it twirl.`
-		: 'Someone is coming up for a look. Click to find them.',
-)
-
+const { cousin, label, mood, twirl, onFound } = useCousin(id)
+const currentSection = useCurrentSection()
 const up = ref(false)
-const mood = ref('idle')
-const twirl = ref(0)
-let observer
-let moodTimer
-let upTimer
+const upTimer = useTimers()
 
-function onFound() {
-	clearTimeout(moodTimer)
-	if (hunt.find(props.id)) {
-		mood.value = 'surprised'
-		moodTimer = setTimeout(() => {
-			mood.value = 'happy'
-			twirl.value++
-			moodTimer = setTimeout(() => (mood.value = 'idle'), 1300)
-		}, 550)
-	} else {
-		mood.value = 'happy'
-		twirl.value++
-		moodTimer = setTimeout(() => (mood.value = 'idle'), 1100)
-	}
-}
-
-onMounted(() => {
-	const target = document.querySelector(props.watch)
-	if (!target) return
-	// "In the section" means it covers the middle of the screen.
-	observer = new IntersectionObserver(
-		([entry]) => {
-			clearTimeout(upTimer)
-			if (!entry.isIntersecting) {
-				up.value = false
-				mood.value = 'idle'
-			} else if (reducedMotion.value) {
-				// No slow rise: it simply appears once the time is up.
-				upTimer = setTimeout(() => (up.value = true), props.seconds * 1000)
-			} else {
-				up.value = true
-			}
-		},
-		{ rootMargin: '-45% 0px -50% 0px' },
-	)
-	observer.observe(target)
-})
-
-onBeforeUnmount(() => {
-	observer?.disconnect()
-	clearTimeout(moodTimer)
-	clearTimeout(upTimer)
-})
+watch(
+	() => currentSection.value === section,
+	(here) => {
+		upTimer.clear()
+		if (!here) {
+			up.value = false
+			mood.value = 'idle'
+		} else if (reducedMotion.value) {
+			// No slow rise: it simply appears once the time is up.
+			upTimer.after(seconds * 1000, () => (up.value = true))
+		} else {
+			up.value = true
+		}
+	},
+)
 </script>
 
 <template>
-	<!-- Lives inside the section it watches, so it comes next in the tab order while you're there. -->
-	<div class="dweller" :class="{ up, reduced: reducedMotion }" :style="{ '--rise': `${seconds}s` }">
+	<!-- Lives inside its section, so it comes next in the tab order while you're there. -->
+	<div class="dweller" :class="{ up }" :style="{ '--rise': `${seconds}s` }">
 		<button
-			class="peeker"
+			class="bare-button peeker"
 			type="button"
 			:aria-label="label"
 			:tabindex="up ? 0 : -1"
@@ -120,13 +91,10 @@ onBeforeUnmount(() => {
 }
 
 .peeker {
-	all: unset;
 	display: block;
 	width: 100%;
 	height: 100%;
-	cursor: pointer;
 	border-radius: 12px;
-	-webkit-tap-highlight-color: transparent;
 	transform: translateY(105%);
 	transition: transform 320ms cubic-bezier(0.5, 0, 0.75, 0);
 }
@@ -137,13 +105,7 @@ onBeforeUnmount(() => {
 	transition: transform var(--rise) cubic-bezier(0.6, 0, 0.4, 1);
 }
 
-.reduced,
-.reduced .peeker {
-	transition: none;
-}
-
 .peeker:focus-visible {
-	outline: 2px solid var(--focus);
 	outline-offset: 4px;
 }
 
@@ -151,5 +113,10 @@ onBeforeUnmount(() => {
 	.dweller {
 		--w: 92px;
 	}
+}
+
+:root.reduce-motion .dweller,
+:root.reduce-motion .peeker {
+	transition: none;
 }
 </style>
