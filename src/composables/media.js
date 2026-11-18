@@ -1,17 +1,17 @@
 import { ref, computed, watchEffect } from 'vue'
 
 function mediaRef(query) {
-	const mq = typeof window !== 'undefined' ? window.matchMedia(query) : null
-	const r = ref(mq ? mq.matches : false)
-	mq?.addEventListener('change', (e) => (r.value = e.matches))
-	return r
+	const mq = window.matchMedia(query)
+	const matches = ref(mq.matches)
+	mq.addEventListener('change', (e) => (matches.value = e.matches))
+	return matches
 }
 
 // Shared, created once.
 export const canHover = mediaRef('(hover: hover) and (pointer: fine)')
 export const narrowScreen = mediaRef('(max-width: 640px)')
 
-// Motion follows the system setting until the visitor flips the switch in the footer,
+// Motion follows the system setting until the visitor flips the switch in my footer,
 // then their choice wins and is remembered. While it's on, <html> gets the
 // `reduce-motion` class, so CSS can use `:root.reduce-motion .thing { ... }`.
 const MOTION_KEY = 'motion'
@@ -40,6 +40,4 @@ export function setReducedMotion(on) {
 	}
 }
 
-if (typeof document !== 'undefined') {
-	watchEffect(() => document.documentElement.classList.toggle('reduce-motion', reducedMotion.value))
-}
+watchEffect(() => document.documentElement.classList.toggle('reduce-motion', reducedMotion.value))

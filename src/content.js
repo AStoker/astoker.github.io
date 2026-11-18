@@ -1,5 +1,5 @@
-// All the words on the site, in one place. Rewrite freely.
-// The facts come from your resume and GitHub profile.
+// Every word on my site lives here, so I can rewrite things without digging through components.
+// The facts come from my resume and GitHub profile.
 
 export const profile = {
 	firstName: 'Andrew',
@@ -12,35 +12,49 @@ export const profile = {
 	github: 'https://github.com/AStoker',
 }
 
+// The skip link, the header and its menu
+export const nav = {
+	skipLink: 'Skip to content',
+	label: 'Main', // what screen readers call the menu
+	menu: 'Menu', // the button the links fold into on phones
+	home: 'back to top', // read after my name on the logo link
+}
+
 export const hero = {
 	greeting: 'Hi, I’m Andrew.',
 	lede: 'I’m a software developer, and the part I’m best at is the part people actually use. I love making things that make life a little easier, or a little more fun, for whoever’s on the other side of the screen. And by the way, this site is still a work in progress.',
 	primary: { label: 'Say hello', href: '#contact' },
 	secondary: { label: 'About me', href: '#about' },
-	resume: 'Download my resume', // the file is set in `resume` below
 }
 
+// My resume PDF lives in public/. When I replace that file, I update the size here too.
+export const resume = {
+	href: '/andrew-stoker-resume.pdf',
+	filename: 'Andrew Stoker resume.pdf', // what it's saved as
+	label: 'Download my resume',
+	format: 'PDF, 64 KB', //   keeps the size on one line
+}
+
+// Each section has an `id` (its #link) and a `menu` label for the header.
+// They're numbered 01, 02… in the order they're listed in `sections` at the bottom.
+
 export const work = {
+	id: 'work',
 	title: 'Work',
+	menu: 'Work',
 	note: 'I’m still writing these up. Check back soon.',
 	slots: 3,
 	slotLabel: 'Case study',
 	slotStatus: 'Coming soon',
 }
 
-// The resume PDF lives in public/. Replace that file to update it; the size is shown next to the link.
-export const resume = {
-	href: '/andrew-stoker-resume.pdf',
-	filename: 'Andrew Stoker resume.pdf', // what it's saved as
-	format: 'PDF, 64\u00a0KB', // \u00a0 keeps the size on one line
-}
-
 export const experience = {
+	id: 'experience',
 	title: 'Experience',
-	note: 'The highlights, not the whole list. If you’d rather just have the resume, it’s right here.',
-	download: 'Download my resume',
+	menu: 'Experience',
+	note: 'The highlights, not the whole list. If you’d rather just have my resume, it’s right here.',
 
-	// The skeleton, newest first. The resume has every bullet point.
+	// The skeleton, newest first. My resume has every bullet point.
 	pathTitle: 'The short version',
 	path: [
 		{ years: '2022–now', role: 'Senior developer', org: 'Swampfox' },
@@ -69,6 +83,7 @@ export const experience = {
 
 	// The fun parts, each one a skill people hire for.
 	highlightsTitle: 'A few highlights',
+	tagsLabel: 'Skills', // what screen readers call each highlight's list of tags
 	highlights: [
 		{
 			title: 'I lead the team, not just the tickets',
@@ -90,7 +105,7 @@ export const experience = {
 		},
 	],
 
-	// Everything that isn't software. `atWork` is what it brings back to the day job.
+	// Everything I do that isn't software. `atWork` is what each one brings back to the day job.
 	offClock: {
 		title: 'Off the clock',
 		intro: 'Software isn’t my only craft. I also work in clay, wood, electronics and the garden, and each one has taught me something I couldn’t have learned at a keyboard.',
@@ -126,7 +141,9 @@ export const experience = {
 }
 
 export const about = {
+	id: 'about',
 	title: 'About',
+	menu: 'About',
 	statement: 'I like making things that make someone’s day easier. Or just more fun.',
 	body: [
 		'I’m a senior developer at Swampfox in Columbia, South Carolina, and I’ve been building software for more than ten years.',
@@ -142,11 +159,25 @@ export const about = {
 	],
 }
 
+export const contact = {
+	id: 'contact',
+	title: 'Say hello',
+	menu: 'Contact',
+	line: 'Got an idea, a question, or just want to say hi? I’d love to hear from you.',
+	email: 'Send me an email',
+	linkedin: 'LinkedIn',
+	github: 'GitHub',
+	newTab: '(opens in a new tab)', // read out by screen readers only
+}
+
+// The sections in the menu, in the order they're on the page.
+export const sections = [work, experience, about, contact]
+
 // The portrait wall in the hero. `me` is the big frame; each cousin gets a small one.
 export const family = {
 	intro: 'The big one’s my mustache. Its five cousins are hiding somewhere on this page.',
 	prompt: { hover: 'Hover over a frame for a clue.', touch: 'Tap a frame for a clue.' },
-	me: { kind: 'chevron', name: 'Me', note: 'Andrew’s mustache' },
+	me: { kind: 'chevron', name: 'Me', label: 'Me: my mustache. Click to make it twirl.' },
 	title: 'The mustache family', // read out by screen readers only
 	meHello: 'That’s me. Well, my mustache. Go on, give it a click.',
 	found: 'Found!',
@@ -155,8 +186,10 @@ export const family = {
 }
 
 // The hidden cousins. `kind` is a mustache from tools/generate-mustache.mjs.
-// `clue` is the riddle shown while it's hiding: a nudge, never instructions.
-// `found` is what the frame says once it's been caught.
+// `clue` is the riddle on the wall while it's hiding: a nudge, never instructions.
+// `found` is what its frame says once it's been caught.
+// `label` is what screen readers hear on the cousin itself until it's found. Afterwards they
+// hear `labelFound`, or `huntText.labelFound` if it doesn't have its own.
 export const cousins = [
 	{
 		id: 'handlebar',
@@ -164,6 +197,7 @@ export const cousins = [
 		name: 'The Handlebar',
 		clue: 'A big fan of my work. Always reading over the top of it.',
 		found: 'Caught reading over a case study’s shoulder.',
+		label: 'Someone is hiding here. Click to find them.',
 	},
 	{
 		id: 'dali',
@@ -171,6 +205,7 @@ export const cousins = [
 		name: 'The Dalí',
 		clue: 'Off the clock and sitting in the dark. Could use a fresh light.',
 		found: 'Every artist needs good lighting.',
+		label: 'Someone was sitting in the dark. Click to find them.',
 	},
 	{
 		id: 'pencil',
@@ -178,6 +213,7 @@ export const cousins = [
 		name: 'The Pencil',
 		clue: 'Shy. Only comes out for people who stick around long enough to get to know me.',
 		found: 'All it wanted was a little patience.',
+		label: 'Someone is coming up for a look. Click to find them.',
 	},
 	{
 		id: 'horseshoe',
@@ -185,6 +221,7 @@ export const cousins = [
 		name: 'The Horseshoe',
 		clue: 'Never far from a hello, but it prefers the dark.',
 		found: 'Caught lurking behind the hello.',
+		label: 'Someone is hiding here. Click to find them.',
 	},
 	{
 		id: 'walrus',
@@ -192,21 +229,15 @@ export const cousins = [
 		name: 'The Walrus',
 		clue: 'Nodded off waiting for the page to end.',
 		found: 'Wide awake now. Sorry, Walrus.',
+		label: 'Someone is asleep here. Click to wake them up.',
+		labelFound: 'Asleep again. You already found this one, but you can wake it anyway.',
 	},
 ]
 
-export const contact = {
-	title: 'Say hello',
-	line: 'Got an idea, a question, or just want to say hi? I’d love to hear from you.',
-	email: 'Send me an email',
-	linkedin: 'LinkedIn',
-	github: 'GitHub',
-	newTab: '(opens in a new tab)', // read out by screen readers only
-}
-
-export const hunt = {
+export const huntText = {
 	counter: 'Cousins found',
 	foundOne: (name) => `You found ${name}!`,
+	labelFound: 'You already found this one. Click to make it twirl.',
 	allTitle: 'You found all five!',
 	allBody: 'You’ve got a good eye. We’d probably get along, so',
 	allLink: 'say hello',
@@ -214,7 +245,7 @@ export const hunt = {
 	close: 'Close',
 }
 
-// The note for anyone who opens the browser's developer console.
+// My note for anyone who opens the browser's developer console.
 export const devConsole = {
 	heading: 'Curious one, aren’t you? I like the way you think.',
 	body: 'If you’re the kind of person who opens the console on someone’s portfolio, I have a feeling we’d work well together. I’d love to hear what you’re building.',

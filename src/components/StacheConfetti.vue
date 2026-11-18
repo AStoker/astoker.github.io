@@ -2,17 +2,18 @@
 // A shower of mustaches, every kind there is, when the last cousin is found.
 import { ref, watch } from 'vue'
 import MustacheIcon from './MustacheIcon.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
+import { hunt } from '../composables/stacheHunt.js'
+import { useTimers } from '../composables/timers.js'
 import { reducedMotion } from '../composables/media.js'
 import { KINDS } from '../assets/mustaches.js'
 
-const { state } = useStacheHunt()
 const pieces = ref([])
+const timers = useTimers()
 
 watch(
-	() => state.celebrating,
-	(on) => {
-		if (!on || reducedMotion.value) return
+	() => hunt.complete,
+	(done) => {
+		if (!done || reducedMotion.value) return
 		const batch = Date.now()
 		pieces.value = Array.from({ length: 48 }, (_, i) => ({
 			id: `${batch}-${i}`,
@@ -25,7 +26,8 @@ watch(
 			drift: (Math.random() - 0.5) * 160,
 			red: Math.random() < 0.4,
 		}))
-		setTimeout(() => (pieces.value = []), 4800)
+		timers.clear()
+		timers.after(4800, () => (pieces.value = []))
 	},
 )
 </script>

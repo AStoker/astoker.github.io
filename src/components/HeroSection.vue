@@ -1,6 +1,7 @@
 <script setup>
-// The hero: who Andrew is on the left, the family portrait wall on the right.
+// The top of my page: who I am on the left, my family portrait wall on the right.
 import StacheFamily from './StacheFamily.vue'
+import ResumeLink from './ResumeLink.vue'
 import { profile, hero, resume } from '../content.js'
 </script>
 
@@ -22,12 +23,7 @@ import { profile, hero, resume } from '../content.js'
 			</div>
 			<!-- For anyone who only came for the resume -->
 			<p class="resume">
-				<a :href="resume.href" :download="resume.filename">
-					<svg class="resume-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-						<path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M3 13.5h10" />
-					</svg>
-					{{ hero.resume }}</a
-				>
+				<ResumeLink />
 				<span class="format">{{ resume.format }}</span>
 			</p>
 		</div>
@@ -57,7 +53,7 @@ import { profile, hero, resume } from '../content.js'
 	font-weight: 620;
 	line-height: 0.88;
 	letter-spacing: -0.035em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
+	font-variation-settings: var(--display-axes), 'opsz' 144;
 }
 
 .name span {
@@ -96,16 +92,6 @@ import { profile, hero, resume } from '../content.js'
 	text-decoration-thickness: 2px;
 	text-underline-offset: 4px;
 	border-radius: 4px;
-}
-
-.resume-icon {
-	width: 1em;
-	height: 1em;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 1.8;
-	stroke-linecap: round;
-	stroke-linejoin: round;
 }
 
 .format {

@@ -1,5 +1,5 @@
 <script setup>
-// Hides one of the cousins behind whatever you put in the slot.
+// Hides one of my cousins behind whatever goes in the slot.
 //
 // How it's revealed (always the same, nothing random):
 //   - A sliver of it pokes out all the time, as a hint that someone's back there.
@@ -13,70 +13,51 @@
 //   </HidingStache>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
-import { reducedMotion, narrowScreen } from '../composables/media.js'
+import { useCousin } from '../composables/cousin.js'
+import { useTimers } from '../composables/timers.js'
+import { pointer } from '../composables/pointer.js'
+import { narrowScreen } from '../composables/media.js'
 
 const props = defineProps({
 	id: { type: String, required: true }, // a cousin id from content.js
 	from: { type: String, default: 'top' }, // top | left | right
 	at: { type: String, default: '50%' }, // position along that edge
 	size: { type: Number, default: 120 }, // width in px
-	// How much shows while hiding and while out, as a fraction of its height (top)
-	// or width (sides). Leave unset for sensible defaults.
-	rest: { type: Number, default: undefined },
-	out: { type: Number, default: undefined },
 })
 
-// Side peeks lean out a little, like peeking round a corner.
-const LEAN = { top: 0, left: -8, right: 8 }
-const DEFAULTS = {
-	top: { rest: 0.19, out: 0.94 },
-	left: { rest: 0.27, out: 0.52 },
-	right: { rest: 0.27, out: 0.52 },
+// How much of it shows while hiding and while out, as a fraction of its height (top) or
+// width (sides). Side peeks lean out a little (degrees), like peeking round a corner.
+const PEEK = {
+	top: { rest: 0.19, out: 0.94, lean: 0 },
+	left: { rest: 0.27, out: 0.52, lean: -8 },
+	right: { rest: 0.27, out: 0.52, lean: 8 },
 }
 
 // Side peeks would poke off the edge of a phone screen, so they come over the top instead.
 const edge = computed(() => (narrowScreen.value ? 'top' : props.from))
-const amounts = computed(() => {
-	const d = DEFAULTS[edge.value]
-	// Custom amounts only apply to the edge they were tuned for.
-	const custom = edge.value === props.from
-	return { rest: (custom && props.rest) || d.rest, out: (custom && props.out) || d.out }
-})
+const peek = computed(() => PEEK[edge.value])
 
-const hunt = useStacheHunt()
-const cousin = hunt.cousin(props.id)
-const found = computed(() => hunt.isFound(props.id))
-const label = computed(() =>
-	found.value
-		? `${cousin.name}. You already found this one. Click to make it twirl.`
-		: 'Someone is hiding here. Click to find them.',
-)
+const { cousin, label, mood, twirl, onFound } = useCousin(props.id)
 
 const spot = ref(null)
 const button = ref(null)
 const peeking = ref(false)
-const mood = ref('idle')
-const twirl = ref(0)
-
-let hideTimer
-let observer
+const hideTimer = useTimers()
 let busyUntil = 0 // don't duck away mid-reaction
-let lastPointer = 'mouse'
 
 function show() {
-	clearTimeout(hideTimer)
+	hideTimer.clear()
 	peeking.value = true
 }
 
 function hide(delay = 350) {
-	clearTimeout(hideTimer)
-	hideTimer = setTimeout(() => {
+	hideTimer.clear()
+	hideTimer.after(delay, () => {
 		const wait = busyUntil - performance.now()
 		if (wait > 0) return hide(wait)
 		peeking.value = false
 		mood.value = 'idle'
-	}, delay)
+	})
 }
 
 function onEnter(e) {
@@ -87,33 +68,16 @@ function onLeave(e) {
 	if (e.pointerType === 'mouse') hide()
 }
 
-function onPointerDown(e) {
-	lastPointer = e.pointerType
-}
-
 // Touch has no hover, so a tap on the slot brings the cousin out (and back).
 function onCoverClick() {
-	if (lastPointer === 'mouse') return
+	if (pointer.type === 'mouse') return
 	if (peeking.value) hide(0)
 	else show()
 }
 
-function onFound() {
+function onClick() {
 	show()
-	if (hunt.find(props.id)) {
-		mood.value = 'surprised'
-		busyUntil = performance.now() + 1800
-		setTimeout(() => {
-			mood.value = 'happy'
-			twirl.value++
-		}, 550)
-		setTimeout(() => (mood.value = 'idle'), 1800)
-	} else {
-		mood.value = 'happy'
-		twirl.value++
-		busyUntil = performance.now() + 1100
-		setTimeout(() => (mood.value = 'idle'), 1100)
-	}
+	busyUntil = performance.now() + onFound()
 }
 
 // Content that pops out on hover has to be dismissible without moving the pointer.
@@ -121,6 +85,8 @@ function onFound() {
 function onKey(e) {
 	if (e.key === 'Escape' && peeking.value && document.activeElement !== button.value) hide(0)
 }
+
+let observer
 
 onMounted(() => {
 	document.addEventListener('keydown', onKey)
@@ -134,7 +100,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
 	document.removeEventListener('keydown', onKey)
 	observer?.disconnect()
-	clearTimeout(hideTimer)
 })
 </script>
 
@@ -142,23 +107,22 @@ onBeforeUnmount(() => {
 	<div
 		ref="spot"
 		class="spot"
-		:class="[`from-${edge}`, { peeking, reduced: reducedMotion }]"
-		:style="{ '--w': `${size}px`, '--at': at, '--rest': amounts.rest, '--out': amounts.out }"
+		:class="[`from-${edge}`, { peeking }]"
+		:style="{ '--w': `${size}px`, '--at': at, '--rest': peek.rest, '--out': peek.out, '--lean': `${peek.lean}deg` }"
 		@pointerenter="onEnter"
 		@pointerleave="onLeave"
-		@pointerdown="onPointerDown"
 	>
 		<div class="rail">
 			<button
 				ref="button"
-				class="peeker"
+				class="bare-button peeker"
 				type="button"
 				:aria-label="label"
-				@click="onFound"
+				@click="onClick"
 				@focus="show"
 				@blur="hide(300)"
 			>
-				<StacheCharacter :kind="cousin.kind" :mood="mood" :rotation="LEAN[edge]" :twirl="twirl" />
+				<StacheCharacter :kind="cousin.kind" :mood="mood" :rotation="peek.lean" :twirl="twirl" />
 			</button>
 		</div>
 		<div class="cover" @click="onCoverClick"><slot /></div>
@@ -186,23 +150,14 @@ onBeforeUnmount(() => {
 	transition: transform 520ms cubic-bezier(0.34, 1.45, 0.64, 1);
 }
 
-.reduced .rail {
-	transition: none;
-}
-
 .peeker {
-	all: unset;
 	display: block;
-	box-sizing: border-box;
 	width: 100%;
 	height: 100%;
-	cursor: pointer;
 	border-radius: 12px;
-	-webkit-tap-highlight-color: transparent;
 }
 
 .peeker:focus-visible {
-	outline: 2px solid var(--focus);
 	outline-offset: 4px;
 }
 
@@ -241,13 +196,21 @@ onBeforeUnmount(() => {
 	transform: translate(calc(var(--w) * var(--out)), -50%);
 }
 
+/* Leaning round the corner (--lean comes from PEEK, so the eyes know about it too) */
+.from-left .peeker,
+.from-right .peeker {
+	transform: rotate(var(--lean));
+}
+
 .from-left .peeker {
 	transform-origin: 100% 60%;
-	transform: rotate(-8deg);
 }
 
 .from-right .peeker {
 	transform-origin: 0 60%;
-	transform: rotate(8deg);
+}
+
+:root.reduce-motion .rail {
+	transition: none;
 }
 </style>

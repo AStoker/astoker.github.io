@@ -1,10 +1,11 @@
 <script setup>
-// The mustache character. Pure presentation: whoever uses it decides the mood,
-// when to twirl, and how it's rotated on screen. The eyes take care of themselves.
+// A mustache with a face. Pure presentation: whoever uses it decides the mood, when to
+// twirl, and how it's rotated on screen. The eyes take care of themselves.
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { MUSTACHES } from '../assets/mustaches.js'
-import { usePointer } from '../composables/pointer.js'
+import { pointer } from '../composables/pointer.js'
 import { reducedMotion } from '../composables/media.js'
+import { useTimers, useReplay } from '../composables/timers.js'
 
 const props = defineProps({
 	// Which mustache it wears: any kind from assets/mustaches.js
@@ -19,8 +20,6 @@ const props = defineProps({
 	rotation: { type: Number, default: 0 },
 	// Bump this number to make the mustache twirl.
 	twirl: { type: Number, default: 0 },
-	// false draws the mustache on its own, with no eyes or brows.
-	eyes: { type: Boolean, default: true },
 	// 'standard' is the same box for every kind, so hiding spots line up.
 	// 'face' grows the box to show the whole face, however long the mustache.
 	fit: { type: String, default: 'standard' },
@@ -40,13 +39,14 @@ const shape = computed(() => MUSTACHES[props.kind] ?? MUSTACHES.chevron)
 const brows = computed(() => BROWS[props.kind] ?? BROWS.chevron)
 
 const viewBox = computed(() => {
-	const [x, y, w, h] = shape.value.box
-	if (!props.eyes) return `${x - 2} ${y - 2} ${w + 4} ${h + 4}`
 	if (props.fit !== 'face') return '4 -28 112 56'
+	const [x, y, , h] = shape.value.box
 	const halfWidth = Math.max(60 - x, 28) + 3
 	const bottom = Math.max(y + h, 22) + 3
 	return `${60 - halfWidth} -30 ${halfWidth * 2} ${bottom + 30}`
 })
+
+// ---------- Eyes ----------
 
 const EYES = [
 	{ x: 45, y: -7 },
@@ -55,97 +55,95 @@ const EYES = [
 const MAX_LOOK = 3.9 // how far a pupil can travel from the centre of its eye
 const LOOKS = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }
 const OPEN_EYED = ['idle', 'surprised', 'suspicious', 'curious', 'excited', 'nervous']
+const eyesOpen = computed(() => OPEN_EYED.includes(props.mood))
 const pupilSize = computed(() => ({ surprised: 3, curious: 5.6, excited: 5 })[props.mood] ?? 4.4)
 
 const root = ref(null)
 const pupil = reactive({ x: 0, y: 0 })
-const blinking = ref(false)
-const twirling = ref(false)
-const pointer = usePointer()
 
-let raf = 0
-let visible = false
-let observer
-let blinkTimer
-let twirlTimer
+// Nobody's moving the cursor: glance around now and then.
 let wander = { x: 0, y: 0, until: 0 }
 
-const eyesOpen = () => props.eyes && OPEN_EYED.includes(props.mood)
+function wanderLook(now) {
+	if (!reducedMotion.value && now > wander.until) {
+		const angle = Math.random() * Math.PI * 2
+		const reach = Math.random() < 0.3 ? 0 : MAX_LOOK * (0.4 + Math.random() * 0.5)
+		wander = {
+			x: Math.cos(angle) * reach,
+			y: Math.sin(angle) * reach,
+			until: now + 1400 + Math.random() * 2200,
+		}
+	}
+	return [wander.x, wander.y]
+}
+
+function followPointer() {
+	const rect = root.value.getBoundingClientRect()
+	let dx = pointer.x - (rect.left + rect.width / 2)
+	let dy = pointer.y - (rect.top + rect.height / 2)
+	// Undo the on-screen rotation so the pupils move in the character's own space.
+	const t = (-props.rotation * Math.PI) / 180
+	;[dx, dy] = [dx * Math.cos(t) - dy * Math.sin(t), dx * Math.sin(t) + dy * Math.cos(t)]
+	const dist = Math.hypot(dx, dy) || 1
+	const reach = MAX_LOOK * (1 - Math.exp(-dist / 160))
+	return [(dx / dist) * reach, (dy / dist) * reach]
+}
+
+// Where the pupils want to be: pinned, following the pointer, or wandering if it's idle.
+function lookTarget(now) {
+	if (!eyesOpen.value) return [0, 0]
+	if (LOOKS[props.look]) return LOOKS[props.look].map((d) => d * MAX_LOOK)
+	const pointerIdle = !pointer.has || now - pointer.lastMove > 4000
+	return pointerIdle ? wanderLook(now) : followPointer()
+}
+
+// The pupils ease towards their target every frame, but only while on screen.
+let raf = 0
+let visible = false
 
 function frame(now) {
 	raf = 0
 	if (!visible || !root.value) return
-
-	let tx = 0
-	let ty = 0
-	if (eyesOpen() && LOOKS[props.look]) {
-		;[tx, ty] = LOOKS[props.look].map((d) => d * MAX_LOOK)
-	} else if (eyesOpen()) {
-		const idle = !pointer.has || now - pointer.lastMove > 4000
-		if (idle) {
-			// Nobody's moving the cursor: glance around on our own.
-			if (!reducedMotion.value && now > wander.until) {
-				const angle = Math.random() * Math.PI * 2
-				const reach = Math.random() < 0.3 ? 0 : MAX_LOOK * (0.4 + Math.random() * 0.5)
-				wander = {
-					x: Math.cos(angle) * reach,
-					y: Math.sin(angle) * reach,
-					until: now + 1400 + Math.random() * 2200,
-				}
-			}
-			tx = wander.x
-			ty = wander.y
-		} else {
-			const rect = root.value.getBoundingClientRect()
-			let dx = pointer.x - (rect.left + rect.width / 2)
-			let dy = pointer.y - (rect.top + rect.height / 2)
-			// Undo the on-screen rotation so the pupils move in the character's own space.
-			const t = (-props.rotation * Math.PI) / 180
-			;[dx, dy] = [dx * Math.cos(t) - dy * Math.sin(t), dx * Math.sin(t) + dy * Math.cos(t)]
-			const dist = Math.hypot(dx, dy) || 1
-			const reach = MAX_LOOK * (1 - Math.exp(-dist / 160))
-			tx = (dx / dist) * reach
-			ty = (dy / dist) * reach
-		}
-	}
-
+	const [tx, ty] = lookTarget(now)
 	pupil.x += (tx - pupil.x) * 0.18
 	pupil.y += (ty - pupil.y) * 0.18
 	raf = requestAnimationFrame(frame)
 }
 
-function blinkOnce(then) {
+// ---------- Blinking and twirling ----------
+
+const blinking = ref(false)
+const blinkTimers = useTimers()
+
+function blink(then) {
 	blinking.value = true
-	setTimeout(() => {
+	blinkTimers.after(130, () => {
 		blinking.value = false
 		then?.()
-	}, 130)
+	})
 }
 
 function scheduleBlink() {
-	blinkTimer = setTimeout(() => {
+	blinkTimers.after(2200 + Math.random() * 4200, () => {
 		if (reducedMotion.value) return scheduleBlink() // hold still, but check again later
-		blinkOnce(() => {
+		blink(() => {
 			// Every so often, a double blink.
-			if (Math.random() < 0.2) setTimeout(() => blinkOnce(), 150)
+			if (Math.random() < 0.2) blinkTimers.after(150, () => blink())
 			scheduleBlink()
 		})
-	}, 2200 + Math.random() * 4200)
+	})
 }
+
+const { playing: twirling, play: playTwirl } = useReplay(1000)
 
 watch(
 	() => props.twirl,
 	() => {
-		if (reducedMotion.value) return
-		twirling.value = false
-		clearTimeout(twirlTimer)
-		// Next frame so a twirl mid-twirl restarts the animation.
-		requestAnimationFrame(() => {
-			twirling.value = true
-			twirlTimer = setTimeout(() => (twirling.value = false), 1000)
-		})
+		if (!reducedMotion.value) playTwirl()
 	},
 )
+
+let observer
 
 onMounted(() => {
 	observer = new IntersectionObserver(([entry]) => {
@@ -159,8 +157,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
 	observer?.disconnect()
 	cancelAnimationFrame(raf)
-	clearTimeout(blinkTimer)
-	clearTimeout(twirlTimer)
 })
 </script>
 
@@ -173,36 +169,29 @@ onBeforeUnmount(() => {
 		aria-hidden="true"
 		focusable="false"
 	>
-		<template v-if="eyes">
-			<template v-for="eye in EYES" :key="eye.x">
-				<g v-if="OPEN_EYED.includes(mood)" class="eye-open">
-					<circle class="sclera" :cx="eye.x" :cy="eye.y" r="9.5" />
-					<circle
-						class="pupil"
-						:cx="eye.x + pupil.x"
-						:cy="eye.y + pupil.y"
-						:r="pupilSize"
-					/>
-					<circle class="glint" :cx="eye.x + pupil.x + 1.5" :cy="eye.y + pupil.y - 1.6" r="1.2" />
-				</g>
-				<!-- happy: ^ ^ -->
-				<path
-					v-else-if="mood === 'happy'"
-					class="line"
-					:d="`M${eye.x - 7} ${eye.y + 3} Q${eye.x} ${eye.y - 7} ${eye.x + 7} ${eye.y + 3}`"
-				/>
-				<!-- asleep: closed lids -->
-				<path v-else class="line" :d="`M${eye.x - 7} ${eye.y} Q${eye.x} ${eye.y + 5} ${eye.x + 7} ${eye.y}`" />
-			</template>
+		<template v-for="eye in EYES" :key="eye.x">
+			<g v-if="eyesOpen" class="eye-open">
+				<circle class="sclera" :cx="eye.x" :cy="eye.y" r="9.5" />
+				<circle class="pupil" :cx="eye.x + pupil.x" :cy="eye.y + pupil.y" :r="pupilSize" />
+				<circle class="glint" :cx="eye.x + pupil.x + 1.5" :cy="eye.y + pupil.y - 1.6" r="1.2" />
+			</g>
+			<!-- happy: ^ ^ -->
 			<path
-				v-for="(d, i) in brows.d"
-				:key="d"
-				class="brow line"
-				:class="i ? 'brow-r' : 'brow-l'"
-				:d="d"
-				:style="{ strokeWidth: brows.width }"
+				v-else-if="mood === 'happy'"
+				class="line"
+				:d="`M${eye.x - 7} ${eye.y + 3} Q${eye.x} ${eye.y - 7} ${eye.x + 7} ${eye.y + 3}`"
 			/>
+			<!-- asleep: closed lids -->
+			<path v-else class="line" :d="`M${eye.x - 7} ${eye.y} Q${eye.x} ${eye.y + 5} ${eye.x + 7} ${eye.y}`" />
 		</template>
+		<path
+			v-for="(d, i) in brows.d"
+			:key="d"
+			class="brow line"
+			:class="i ? 'brow-r' : 'brow-l'"
+			:d="d"
+			:style="{ strokeWidth: brows.width }"
+		/>
 
 		<g class="half half-l"><path :d="shape.half" transform="translate(120 0) scale(-1 1)" /></g>
 		<g class="half half-r"><path :d="shape.half" /></g>

@@ -1,12 +1,11 @@
 <script setup>
-import SectionHead from './SectionHead.vue'
+import PageSection from './PageSection.vue'
 import HidingStache from './HidingStache.vue'
 import { profile, contact } from '../content.js'
 </script>
 
 <template>
-	<section id="contact" class="section container" aria-labelledby="contact-title">
-		<SectionHead id="contact-title" num="04" :title="contact.title" />
+	<PageSection :section="contact">
 
 		<HidingStache id="horseshoe" from="left" at="34%" :size="124">
 			<div class="card">
@@ -30,7 +29,7 @@ import { profile, contact } from '../content.js'
 				</div>
 			</div>
 		</HidingStache>
-	</section>
+	</PageSection>
 </template>
 
 <style scoped>
@@ -52,7 +51,7 @@ import { profile, contact } from '../content.js'
 	font-weight: 500;
 	line-height: 1.08;
 	letter-spacing: -0.025em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
+	font-variation-settings: var(--display-axes), 'opsz' 144;
 	text-wrap: balance;
 }
 

@@ -1,29 +1,27 @@
 <script setup>
-// Experience: a few highlights rather than the whole resume, the short version of the
-// path beside them, then everything off the clock. The resume is one click from the top.
+// My experience: a few highlights rather than the whole resume, the short version of the
+// path beside them, then everything I do off the clock. My resume is one click from the top.
 import { ref } from 'vue'
-import SectionHead from './SectionHead.vue'
+import PageSection from './PageSection.vue'
+import ResumeLink from './ResumeLink.vue'
 import WorkshopLamp from './WorkshopLamp.vue'
 import { experience, resume } from '../content.js'
 
-const off = experience.offClock
+const { offClock } = experience
 // The closing line sits across from the workbench, and its last words light up with the lamp.
 const lampOn = ref(false)
 </script>
 
 <template>
-	<section id="experience" class="section container" aria-labelledby="experience-title">
-		<SectionHead id="experience-title" num="02" :title="experience.title">
+	<PageSection :section="experience">
+		<template #note>
 			<p>{{ experience.note }}</p>
-			<a class="btn btn-solid resume" :href="resume.href" :download="resume.filename">
-				<svg class="resume-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-					<path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M3 13.5h10" />
-				</svg>
+			<ResumeLink class="btn btn-solid resume">
 				<span>
-					{{ experience.download }} <span class="format">({{ resume.format }})</span>
+					{{ resume.label }} <span class="format">({{ resume.format }})</span>
 				</span>
-			</a>
-		</SectionHead>
+			</ResumeLink>
+		</template>
 
 		<div class="xp">
 			<div>
@@ -33,7 +31,7 @@ const lampOn = ref(false)
 						<h4 class="highlight-title">{{ item.title }}</h4>
 						<p class="where">{{ item.where }}</p>
 						<p class="highlight-body">{{ item.body }}</p>
-						<ul class="chips" aria-label="Skills">
+						<ul class="chips" :aria-label="experience.tagsLabel">
 							<li v-for="tag in item.tags" :key="tag">{{ tag }}</li>
 						</ul>
 					</li>
@@ -58,41 +56,31 @@ const lampOn = ref(false)
 		</div>
 
 		<div class="off">
-			<h3 class="off-title">{{ off.title }}</h3>
-			<p class="off-intro">{{ off.intro }}</p>
+			<h3 class="off-title">{{ offClock.title }}</h3>
+			<p class="off-intro">{{ offClock.intro }}</p>
 			<ul class="crafts">
-				<li v-for="craft in off.crafts" :key="craft.name" class="craft">
+				<li v-for="craft in offClock.crafts" :key="craft.name" class="craft">
 					<h4 class="craft-name">{{ craft.name }}</h4>
 					<p>{{ craft.line }}</p>
 					<p class="at-work">
-						<strong>{{ off.atWorkLabel }}</strong> {{ craft.atWork }}
+						<strong>{{ offClock.atWorkLabel }}</strong> {{ craft.atWork }}
 					</p>
 				</li>
 			</ul>
 
 			<div class="finale">
 				<p class="closing">
-					{{ off.closing }} <span class="light" :class="{ on: lampOn }">{{ off.closingLight }}</span>
+					{{ offClock.closing }} <span class="light" :class="{ on: lampOn }">{{ offClock.closingLight }}</span>
 				</p>
 				<WorkshopLamp id="dali" v-model:lit="lampOn" class="bench" />
 			</div>
 		</div>
-	</section>
+	</PageSection>
 </template>
 
 <style scoped>
 .resume {
 	margin-top: 20px;
-}
-
-.resume-icon {
-	width: 1.05em;
-	height: 1.05em;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 1.8;
-	stroke-linecap: round;
-	stroke-linejoin: round;
 }
 
 .format {
@@ -138,7 +126,7 @@ const lampOn = ref(false)
 	font-weight: 560;
 	line-height: 1.12;
 	letter-spacing: -0.015em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 72;
+	font-variation-settings: var(--display-axes), 'opsz' 72;
 	text-wrap: balance;
 }
 
@@ -234,7 +222,7 @@ const lampOn = ref(false)
 	font-weight: 560;
 	line-height: 1.05;
 	letter-spacing: -0.025em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
+	font-variation-settings: var(--display-axes), 'opsz' 144;
 }
 
 .off-intro {
@@ -262,7 +250,7 @@ const lampOn = ref(false)
 	font-family: var(--font-display);
 	font-size: 1.3rem;
 	font-weight: 600;
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 48;
+	font-variation-settings: var(--display-axes), 'opsz' 48;
 }
 
 .craft p {
@@ -304,7 +292,7 @@ const lampOn = ref(false)
 	font-weight: 450;
 	line-height: 1.2;
 	letter-spacing: -0.01em;
-	font-variation-settings: 'SOFT' 100, 'WONK' 0, 'opsz' 72;
+	font-variation-settings: var(--display-axes-calm), 'opsz' 72;
 	text-wrap: balance;
 }
 
@@ -321,7 +309,7 @@ const lampOn = ref(false)
 }
 
 .light.on {
-	color: #1b1a17;
+	color: var(--ink-fixed);
 	background-color: #ffe2a2;
 }
 

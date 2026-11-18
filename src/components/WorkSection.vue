@@ -1,35 +1,27 @@
 <script setup>
-import SectionHead from './SectionHead.vue'
+import PageSection from './PageSection.vue'
+import CaseStudySlot from './CaseStudySlot.vue'
 import HidingStache from './HidingStache.vue'
 import { work } from '../content.js'
 
 const slots = Array.from({ length: work.slots }, (_, i) => String(i + 1).padStart(2, '0'))
-// Which case study the Handlebar hides behind.
-const HIDING_IN = '02'
+// The case study the Handlebar hides behind
+const HANDLEBAR_SLOT = '02'
 </script>
 
 <template>
-	<section id="work" class="section container" aria-labelledby="work-title">
-		<SectionHead id="work-title" num="01" :title="work.title">
-			<p>{{ work.note }}</p>
-		</SectionHead>
+	<PageSection :section="work">
+		<template #note><p>{{ work.note }}</p></template>
 
 		<ul class="slots">
-			<li v-for="n in slots" :key="n">
-				<component
-					:is="n === HIDING_IN ? HidingStache : 'div'"
-					v-bind="n === HIDING_IN ? { id: 'handlebar', from: 'top', at: '68%', size: 132 } : {}"
-					class="slot-wrap"
-				>
-					<div class="slot">
-						<span class="slot-label">{{ work.slotLabel }} {{ n }}</span>
-						<span class="slot-num" aria-hidden="true">{{ n }}</span>
-						<span class="slot-status">{{ work.slotStatus }}</span>
-					</div>
-				</component>
+			<li v-for="num in slots" :key="num">
+				<HidingStache v-if="num === HANDLEBAR_SLOT" id="handlebar" class="hider" from="top" at="68%" :size="132">
+					<CaseStudySlot :num="num" />
+				</HidingStache>
+				<CaseStudySlot v-else :num="num" />
 			</li>
 		</ul>
-	</section>
+	</PageSection>
 </template>
 
 <style scoped>
@@ -42,58 +34,14 @@ const HIDING_IN = '02'
 	list-style: none;
 }
 
-.slot-wrap {
+.hider {
 	height: 100%;
-}
-
-.slot {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	aspect-ratio: 4 / 5;
-	padding: 18px 20px;
-	border: 1.5px dashed var(--rule-strong);
-	border-radius: 16px;
-	background:
-		repeating-linear-gradient(-45deg, transparent 0 11px, var(--hatch) 11px 12px),
-		var(--paper);
-}
-
-.slot-label,
-.slot-status {
-	font-family: var(--font-mono);
-	font-size: 0.75rem;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--ink-soft);
-}
-
-.slot-status {
-	align-self: flex-start;
-	padding: 4px 9px;
-	border: 1.5px solid currentColor;
-	border-radius: 999px;
-}
-
-.slot-num {
-	font-family: var(--font-display);
-	font-size: clamp(4rem, 9vw, 7rem);
-	font-weight: 300;
-	line-height: 1;
-	letter-spacing: -0.04em;
-	color: color-mix(in srgb, var(--ink) 58%, transparent); /* over 3:1 even on the hatching, enough for type this big */
-	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
 }
 
 @media (max-width: 760px) {
 	.slots {
 		grid-template-columns: 1fr;
 		gap: 40px;
-	}
-
-	.slot {
-		aspect-ratio: 16 / 9;
 	}
 }
 </style>

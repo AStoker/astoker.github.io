@@ -1,4 +1,4 @@
-// Regenerates src/assets/mustaches.js.
+// Regenerates src/assets/mustaches.js, every mustache on my site.
 //
 //   node tools/generate-mustache.mjs
 //
@@ -6,7 +6,7 @@
 // far the hair extends above and below that line along the way. The script turns
 // that into one filled outline. The site mirrors it to get the left half.
 //
-// To reshape one, edit its entry in STYLES and run the script. To add a new kind,
+// To reshape one, I edit its entry in STYLES and run the script. To add a new kind,
 // add an entry; it becomes available everywhere as <MustacheIcon kind="..."> and
 // <StacheCharacter kind="...">, and joins the confetti.
 //
@@ -21,7 +21,7 @@ import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const STYLES = {
-	// Neat, full and straight: stops at the corners of the mouth.
+	// Mine. Neat, full and straight: stops at the corners of the mouth.
 	chevron: {
 		centerline: [[[56, 16.2], [66, 15.6], [79, 17.2], [91.5, 23.6]]],
 		top: [[0, 4.6], [0.28, 6.4], [0.7, 4.7], [1, 1.3]],
@@ -205,9 +205,6 @@ ${entries.join('\n')}
 }
 
 export const KINDS = Object.keys(MUSTACHES)
-
-// Point the halves pivot around when a mustache twirls (just under the nose).
-export const PIVOT = { x: 60, y: 17.5 }
 `
 
 const target = fileURLToPath(new URL('../src/assets/mustaches.js', import.meta.url))

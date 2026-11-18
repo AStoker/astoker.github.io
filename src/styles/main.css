@@ -17,14 +17,23 @@
 	--rule-strong: color-mix(in srgb, var(--ink) 32%, transparent);
 	--hatch: color-mix(in srgb, var(--ink) 7%, transparent);
 
+	/* The same in light and dark mode, for things that sit on their own fixed colours
+	   (eyes, the lamplit workbench) */
+	--ink-fixed: #1b1a17;
+	--paper-fixed: #f4efe6;
+
 	/* The character */
 	--stache: var(--ink);
 	--eye-white: #fffdf7;
-	--eye-ink: #1b1a17;
+	--eye-ink: var(--ink-fixed);
 
 	--font-display: 'Fraunces Variable', Georgia, serif;
 	--font-body: 'Instrument Sans Variable', system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+	/* Fraunces' soft, slightly wonky character. Each heading adds its own optical size:
+	   font-variation-settings: var(--display-axes), 'opsz' 144; */
+	--display-axes: 'SOFT' 100, 'WONK' 1;
+	--display-axes-calm: 'SOFT' 100, 'WONK' 0; /* the same, without the wonky letters */
 
 	--header-h: 72px;
 }
@@ -151,6 +160,20 @@ a {
 
 /* ---------- Buttons ---------- */
 
+/* A button with none of the browser's styling, for things drawn some other way
+   (a mustache, a picture frame, a switch). Each one sets its own look. */
+.bare-button {
+	all: unset;
+	box-sizing: border-box;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.bare-button:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 3px;
+}
+
 .btn {
 	display: inline-flex;
 	align-items: center;
@@ -212,7 +235,7 @@ a {
 
 .half {
 	transform-box: view-box;
-	transform-origin: 60px 17.5px; /* just under the nose */
+	transform-origin: 60px 17.5px; /* the point a mustache twirls around: just under the nose */
 }
 
 @keyframes stache-twirl-l {
@@ -254,7 +277,7 @@ a {
 }
 
 /* ---------- Less motion ----------
-   Set by the system's reduced-motion setting or the switch in the footer
+   Set by the system's reduced-motion setting or the switch in my footer
    (see composables/media.js). Components add their own rules the same way. */
 
 :root.reduce-motion {

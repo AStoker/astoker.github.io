@@ -30,6 +30,3 @@ export const MUSTACHES = {
 }
 
 export const KINDS = Object.keys(MUSTACHES)
-
-// Point the halves pivot around when a mustache twirls (just under the nose).
-export const PIVOT = { x: 60, y: 17.5 }

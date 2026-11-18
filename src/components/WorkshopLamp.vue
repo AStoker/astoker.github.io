@@ -1,14 +1,14 @@
 <script setup>
-// The workbench after hours, with a cousin sitting on the shelf in the dark.
+// My workbench after hours, with a cousin sitting on the shelf in the dark.
 // Only its eyes show until someone turns the lamp on.
 //
 // How it's revealed (always the same, nothing random):
 //   - Pull the lamp cord (or click the lamp) and the shelf lights up.
 //   - In the light it gets a fright, then settles. Clicking it counts as finding it.
 //   - Pull the cord again and it's back in the dark.
-import { ref, computed, onBeforeUnmount } from 'vue'
 import StacheCharacter from './StacheCharacter.vue'
-import { useStacheHunt } from '../composables/stacheHunt.js'
+import { useCousin } from '../composables/cousin.js'
+import { useReplay } from '../composables/timers.js'
 import { reducedMotion } from '../composables/media.js'
 import { experience } from '../content.js'
 
@@ -16,62 +16,24 @@ const props = defineProps({
 	id: { type: String, required: true }, // a cousin id from content.js
 })
 
-const words = experience.offClock
-const hunt = useStacheHunt()
-const cousin = hunt.cousin(props.id)
-const found = computed(() => hunt.isFound(props.id))
-const label = computed(() =>
-	found.value
-		? `${cousin.name}. You already found this one. Click to make it twirl.`
-		: 'Someone was sitting in the dark. Click to find them.',
-)
+const { offClock } = experience
+const { cousin, label, mood, twirl, timers, onFound } = useCousin(props.id)
 
 // Shared with the page (v-model:lit) so other things can light up with the lamp.
 const lit = defineModel('lit', { type: Boolean, default: false })
-const tugging = ref(false)
-const mood = ref('idle')
-const twirl = ref(0)
-
-let timers = []
-const after = (ms, fn) => timers.push(setTimeout(fn, ms))
-const clearTimers = () => {
-	timers.forEach(clearTimeout)
-	timers = []
-}
+const { playing: tugging, play: tug } = useReplay(450)
 
 function pull() {
-	clearTimers()
+	timers.clear()
 	lit.value = !lit.value
-	if (!reducedMotion.value) {
-		tugging.value = false
-		requestAnimationFrame(() => (tugging.value = true))
-		after(450, () => (tugging.value = false))
-	}
+	if (!reducedMotion.value) tug()
 	if (lit.value) {
 		mood.value = 'surprised'
-		after(900, () => (mood.value = 'idle'))
+		timers.after(900, () => (mood.value = 'idle'))
 	} else {
 		mood.value = 'idle'
 	}
 }
-
-function onFound() {
-	clearTimers()
-	if (hunt.find(props.id)) {
-		mood.value = 'surprised'
-		after(550, () => {
-			mood.value = 'happy'
-			twirl.value++
-		})
-		after(1800, () => (mood.value = 'idle'))
-	} else {
-		mood.value = 'happy'
-		twirl.value++
-		after(1100, () => (mood.value = 'idle'))
-	}
-}
-
-onBeforeUnmount(clearTimers)
 
 // Saw teeth along the bottom of the blade, from the tip back to the handle.
 const teeth = Array.from({ length: 13 }, (_, i) => {
@@ -145,14 +107,14 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 				<line x1="204" y1="72" x2="204" y2="112" />
 				<circle cx="204" cy="115.5" r="4" />
 				<rect x="191" y="121" width="26" height="15" rx="3.5" />
-				<text x="204" y="131.6" text-anchor="middle">{{ words.lampTag }}</text>
+				<text x="204" y="131.6" text-anchor="middle">{{ offClock.lampTag }}</text>
 			</g>
 		</svg>
 
-		<button class="cord" type="button" :aria-label="words.lampCord" :aria-pressed="lit" @click="pull" />
+		<button class="bare-button cord" type="button" :aria-label="offClock.lampCord" :aria-pressed="lit" @click="pull" />
 
 		<button
-			class="dali"
+			class="bare-button dali"
 			type="button"
 			:aria-label="label"
 			:tabindex="lit ? 0 : -1"
@@ -176,7 +138,7 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 }
 
 .workshop.lit {
-	--stache: #1b1a17;
+	--stache: var(--ink-fixed);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -281,8 +243,8 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 }
 
 .pull rect {
-	fill: #f4efe6;
-	stroke: #1b1a17;
+	fill: var(--paper-fixed);
+	stroke: var(--ink-fixed);
 	stroke-width: 1;
 }
 
@@ -290,7 +252,7 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 	font-family: var(--font-mono);
 	font-size: 10px;
 	font-weight: 600;
-	fill: #1b1a17;
+	fill: var(--ink-fixed);
 }
 
 .pull {
@@ -314,11 +276,7 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 /* The buttons sit over the drawing. The cord's covers the bead and its tag. */
 .cord,
 .dali {
-	all: unset;
 	position: absolute;
-	box-sizing: border-box;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
 }
 
 .cord {
@@ -346,9 +304,9 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 /* Two-tone ring, so it shows on the dark wall and in the lamplight */
 .cord:focus-visible,
 .dali:focus-visible {
-	outline: 2px solid #1b1a17;
+	outline: 2px solid var(--ink-fixed);
 	outline-offset: 2px;
-	box-shadow: 0 0 0 6px #f4efe6;
+	box-shadow: 0 0 0 6px var(--paper-fixed);
 }
 
 :root.reduce-motion .pull,
