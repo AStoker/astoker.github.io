@@ -12,6 +12,7 @@
 	--on-red: #1b1a17;
 	--card: var(--ink); /* the dark Say hello card */
 	--on-card: var(--paper);
+	--focus: var(--red); /* focus rings; anything on a dark or inverted surface swaps it */
 	--rule: color-mix(in srgb, var(--ink) 16%, transparent);
 	--rule-strong: color-mix(in srgb, var(--ink) 32%, transparent);
 	--hatch: color-mix(in srgb, var(--ink) 7%, transparent);
@@ -50,6 +51,8 @@
 html {
 	scroll-behavior: smooth;
 	scroll-padding-top: calc(var(--header-h) + 8px);
+	/* Keep focused things clear of the toast and the shy cousin at the bottom of the window */
+	scroll-padding-bottom: 96px;
 	-webkit-text-size-adjust: 100%;
 }
 
@@ -96,7 +99,7 @@ a {
 }
 
 :focus-visible {
-	outline: 2px solid var(--red);
+	outline: 2px solid var(--focus);
 	outline-offset: 3px;
 }
 
@@ -248,16 +251,18 @@ a {
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	html {
-		scroll-behavior: auto;
-	}
+/* ---------- Less motion ----------
+   Set by the system's reduced-motion setting or the switch in the footer
+   (see composables/media.js). Components add their own rules the same way. */
 
-	.btn {
-		transition: none;
-	}
+:root.reduce-motion {
+	scroll-behavior: auto;
+}
 
-	.btn:hover {
-		transform: none;
-	}
+:root.reduce-motion .btn {
+	transition: none;
+}
+
+:root.reduce-motion .btn:hover {
+	transform: none;
 }

@@ -4,7 +4,7 @@ import MustacheIcon from './MustacheIcon.vue'
 import { useStacheHunt } from '../composables/stacheHunt.js'
 import { hunt as words } from '../content.js'
 
-const { state, count, total, complete, cousin, reset } = useStacheHunt()
+const { state, count, total, complete, cousin, requestHide } = useStacheHunt()
 const show = ref(false)
 const latest = computed(() => cousin(state.lastFound))
 let timer
@@ -12,15 +12,30 @@ let timer
 watch(
 	() => state.findCount,
 	() => {
-		if (complete.value) return // the celebration takes over
+		clearTimeout(timer)
+		if (complete.value) {
+			show.value = false // the celebration takes over, and nothing's left behind once it closes
+			return
+		}
 		show.value = true
 		clearTimeout(timer)
 		timer = setTimeout(() => (show.value = false), 3000)
 	},
 )
 
+// Back up to the portrait wall, where they all run off before the hunt resets.
+// The send-off waits until the scroll lands, so it isn't over before you get there.
 function hideAgain() {
-	reset()
+	state.celebrating = false
+	if (window.scrollY < 10) return requestHide()
+	let sent = false
+	const send = () => {
+		if (sent) return
+		sent = true
+		requestHide()
+	}
+	window.addEventListener('scrollend', send, { once: true })
+	setTimeout(send, 1200) // for browsers without scrollend
 	window.scrollTo({ top: 0 })
 }
 </script>
@@ -38,7 +53,9 @@ function hideAgain() {
 				</div>
 				<div class="buttons">
 					<button type="button" class="link" @click="hideAgain">{{ words.reset }}</button>
-					<button type="button" class="close" aria-label="Close" @click="state.celebrating = false">×</button>
+					<button type="button" class="close" :aria-label="words.close" @click="state.celebrating = false">
+						<span aria-hidden="true">×</span>
+					</button>
 				</div>
 			</div>
 			<div v-else-if="show && latest" class="toast">
@@ -75,6 +92,7 @@ function hideAgain() {
 	border-radius: 999px;
 	box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4);
 	pointer-events: auto;
+	--focus: var(--paper);
 }
 
 .toast p {
@@ -129,22 +147,30 @@ function hideAgain() {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
-	gap: 6px;
+	gap: 4px;
+	margin: -6px -6px 0 0;
 }
 
 .buttons button {
 	all: unset;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 32px;
 	cursor: pointer;
 	color: inherit;
-	border-radius: 6px;
+	border-radius: 8px;
 }
 
 .buttons button:focus-visible {
-	outline: 2px solid var(--red);
-	outline-offset: 3px;
+	outline: 2px solid var(--focus);
+	outline-offset: 1px;
 }
 
-.link {
+/* .buttons in front so these beat the `all: unset` above */
+.buttons .link {
+	padding: 0 6px;
 	font-size: 0.85rem;
 	text-decoration: underline;
 	text-underline-offset: 3px;
@@ -152,10 +178,58 @@ function hideAgain() {
 	order: 2;
 }
 
-.close {
+.buttons .close {
+	min-width: 32px;
 	font-size: 1.4rem;
 	line-height: 1;
 	order: 1;
+}
+
+/* Phones: the text gets the full width, with Hide them again tucked underneath */
+@media (max-width: 540px) {
+	.big {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-areas:
+			'icon text close'
+			'icon again again';
+		column-gap: 10px;
+		row-gap: 2px;
+		padding: 14px 10px 10px 14px;
+		border-radius: 18px;
+	}
+
+	.big .icon {
+		grid-area: icon;
+		width: 30px;
+		margin-top: 2px;
+	}
+
+	.big .text {
+		grid-area: text;
+		font-size: 0.95rem;
+		line-height: 1.45;
+	}
+
+	.title {
+		font-size: 1.15rem;
+	}
+
+	.buttons {
+		display: contents; /* so the two buttons can sit in the grid on their own */
+	}
+
+	.buttons .close {
+		grid-area: close;
+		align-self: start;
+		margin-top: -6px;
+	}
+
+	.buttons .link {
+		grid-area: again;
+		justify-self: start;
+		padding: 0;
+	}
 }
 
 .toast-enter-active,
@@ -171,10 +245,8 @@ function hideAgain() {
 	transform: translateY(16px);
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.toast-enter-from,
-	.toast-leave-to {
-		transform: none;
-	}
+:root.reduce-motion .toast-enter-from,
+:root.reduce-motion .toast-leave-to {
+	transform: none;
 }
 </style>

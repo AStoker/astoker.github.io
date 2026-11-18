@@ -63,7 +63,7 @@ function wake() {
 }
 
 .napper:focus-visible {
-	outline: 2px solid var(--red);
+	outline: 2px solid var(--focus);
 	outline-offset: 4px;
 }
 
@@ -133,22 +133,20 @@ function wake() {
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.asleep :deep(.stache),
-	.zzz span {
-		animation: none;
-	}
+:root.reduce-motion .asleep :deep(.stache),
+:root.reduce-motion .zzz span {
+	animation: none;
+}
 
-	.zzz span {
-		opacity: 1;
-	}
+:root.reduce-motion .zzz span {
+	opacity: 1;
+}
 
-	.zzz span:nth-child(2) {
-		transform: translate(8px, -10px);
-	}
+:root.reduce-motion .zzz span:nth-child(2) {
+	transform: translate(8px, -10px);
+}
 
-	.zzz span:nth-child(3) {
-		transform: translate(16px, -20px);
-	}
+:root.reduce-motion .zzz span:nth-child(3) {
+	transform: translate(16px, -20px);
 }
 </style>

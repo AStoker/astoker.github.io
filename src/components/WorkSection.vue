@@ -4,7 +4,7 @@ import HidingStache from './HidingStache.vue'
 import { work } from '../content.js'
 
 const slots = Array.from({ length: work.slots }, (_, i) => String(i + 1).padStart(2, '0'))
-// Which empty frame the Handlebar hides behind.
+// Which case study the Handlebar hides behind.
 const HIDING_IN = '02'
 </script>
 
@@ -82,7 +82,7 @@ const HIDING_IN = '02'
 	font-weight: 300;
 	line-height: 1;
 	letter-spacing: -0.04em;
-	color: var(--rule-strong);
+	color: color-mix(in srgb, var(--ink) 58%, transparent); /* over 3:1 even on the hatching, enough for type this big */
 	font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
 }
 

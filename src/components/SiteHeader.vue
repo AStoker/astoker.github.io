@@ -6,6 +6,7 @@ import { profile, hunt as words } from '../content.js'
 
 const links = [
 	{ id: 'work', label: 'Work' },
+	{ id: 'experience', label: 'Experience' },
 	{ id: 'about', label: 'About' },
 	{ id: 'contact', label: 'Contact' },
 ]
@@ -33,6 +34,31 @@ watch(target, placeIndicator)
 
 const scrolled = ref(false)
 const onScroll = () => (scrolled.value = window.scrollY > 8)
+
+// On narrow screens the links fold into a Menu button (CSS decides when).
+// It opens and closes like any disclosure: Escape or a click elsewhere closes it.
+const menuOpen = ref(false)
+const navEl = ref(null)
+const menuButton = ref(null)
+
+function closeMenu({ refocus = false } = {}) {
+	if (!menuOpen.value) return
+	menuOpen.value = false
+	if (refocus) menuButton.value?.focus()
+}
+
+function onNavKey(e) {
+	if (e.key === 'Escape' && menuOpen.value) closeMenu({ refocus: true })
+}
+
+function onDocPointer(e) {
+	if (menuOpen.value && !navEl.value?.contains(e.target)) closeMenu()
+}
+
+// Tabbing out of the open menu closes it, so it never sits over the page unattended.
+function onNavFocusOut(e) {
+	if (menuOpen.value && !navEl.value?.contains(e.relatedTarget)) closeMenu()
+}
 
 // Bump the counter when something new is found.
 const bump = ref(false)
@@ -62,6 +88,7 @@ onMounted(() => {
 	})
 	window.addEventListener('scroll', onScroll, { passive: true })
 	window.addEventListener('resize', placeIndicator)
+	document.addEventListener('pointerdown', onDocPointer)
 	onScroll()
 })
 
@@ -69,6 +96,7 @@ onBeforeUnmount(() => {
 	spy?.disconnect()
 	window.removeEventListener('scroll', onScroll)
 	window.removeEventListener('resize', placeIndicator)
+	document.removeEventListener('pointerdown', onDocPointer)
 })
 </script>
 
@@ -80,8 +108,19 @@ onBeforeUnmount(() => {
 				<span class="brand-name">{{ profile.firstName }} {{ profile.lastName }}</span>
 			</a>
 
-			<nav class="nav" aria-label="Main">
-				<ul @pointerleave="hovered = null">
+			<nav ref="navEl" class="nav" :class="{ open: menuOpen }" aria-label="Main" @keydown="onNavKey" @focusout="onNavFocusOut">
+				<button
+					ref="menuButton"
+					class="menu-toggle"
+					type="button"
+					:aria-expanded="menuOpen ? 'true' : 'false'"
+					aria-controls="main-nav-links"
+					@click="menuOpen = !menuOpen"
+				>
+					<span class="menu-lines" aria-hidden="true"><span /><span /><span /></span>
+					Menu
+				</button>
+				<ul id="main-nav-links" @pointerleave="hovered = null">
 					<li v-for="link in links" :key="link.id">
 						<a
 							:ref="(el) => (linkEls[link.id] = el)"
@@ -90,6 +129,7 @@ onBeforeUnmount(() => {
 							@pointerenter="hovered = link.id"
 							@focus="hovered = link.id"
 							@blur="hovered = null"
+							@click="closeMenu()"
 						>
 							{{ link.label }}
 						</a>
@@ -211,6 +251,7 @@ onBeforeUnmount(() => {
 	display: flex;
 	align-items: center;
 	gap: 6px;
+	min-height: 28px;
 	margin: 0;
 	padding: 5px 10px;
 	color: var(--ink);
@@ -242,14 +283,18 @@ onBeforeUnmount(() => {
 	}
 }
 
+.menu-toggle {
+	display: none;
+}
+
 @media (max-width: 640px) {
 	.brand-name {
 		display: none;
 	}
 }
 
-/* Small phones: tighten up so the counter still fits */
-@media (max-width: 420px) {
+/* Phones: the four links fold into a Menu button, and drop down below the header */
+@media (max-width: 540px) {
 	.inner {
 		gap: 12px;
 	}
@@ -258,38 +303,114 @@ onBeforeUnmount(() => {
 		width: 34px;
 	}
 
+	/* Plain text like the links it stands in for, so it never looks like the
+	   outlined hunt counter beside it */
+	.menu-toggle {
+		all: unset;
+		box-sizing: border-box;
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 44px;
+		padding: 0 6px;
+		font-weight: 550;
+		color: var(--ink);
+		cursor: pointer;
+		border-radius: 8px;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.menu-toggle:focus-visible {
+		outline: 2px solid var(--focus);
+		outline-offset: 2px;
+	}
+
+	/* Three lines that fold into an × while the menu's open */
+	.menu-lines {
+		position: relative;
+		width: 18px;
+		height: 14px;
+	}
+
+	.menu-lines span {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 2px;
+		border-radius: 2px;
+		background: currentColor;
+		transition:
+			transform 220ms ease,
+			opacity 150ms;
+	}
+
+	.menu-lines span:nth-child(2) {
+		top: 6px;
+	}
+
+	.menu-lines span:nth-child(3) {
+		top: 12px;
+	}
+
+	.open .menu-lines span:nth-child(1) {
+		transform: translateY(6px) rotate(45deg);
+	}
+
+	.open .menu-lines span:nth-child(2) {
+		opacity: 0;
+	}
+
+	.open .menu-lines span:nth-child(3) {
+		transform: translateY(-6px) rotate(-45deg);
+	}
+
 	.nav ul {
-		gap: 14px;
+		display: none;
+		position: absolute;
+		top: calc(100% + 16px);
+		right: 0;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 210px;
+		padding: 8px;
+		background: var(--paper-raised);
+		border: 1.5px solid var(--ink);
+		border-radius: 16px;
+		box-shadow: 0 14px 34px -14px rgb(0 0 0 / 0.4);
+	}
+
+	.nav.open ul {
+		display: flex;
 	}
 
 	.nav a {
-		font-size: 0.95rem;
+		padding: 10px 12px;
+		border-radius: 10px;
 	}
 
-	.hunt {
-		gap: 4px;
-		padding: 0;
-		border: 0;
-		font-size: 0.72rem;
+	.nav a[aria-current] {
+		text-decoration: underline;
+		text-decoration-color: var(--red);
+		text-decoration-thickness: 2px;
+		text-underline-offset: 6px;
 	}
 
-	.hunt.done {
-		padding: 3px 7px;
-	}
-
-	.hunt-icon {
-		width: 18px;
+	.indicator {
+		display: none;
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.indicator {
-		transition: opacity 200ms;
-	}
+:root.reduce-motion .indicator {
+	transition: opacity 200ms;
+}
 
-	.brand:hover .brand-mark :deep(.half),
-	.hunt.bump {
-		animation: none;
-	}
+:root.reduce-motion .menu-lines span {
+	transition: none;
+}
+
+:root.reduce-motion .brand:hover .brand-mark :deep(.half),
+:root.reduce-motion .hunt.bump {
+	animation: none;
 }
 </style>

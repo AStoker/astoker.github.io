@@ -6,7 +6,7 @@ import { profile, contact } from '../content.js'
 
 <template>
 	<section id="contact" class="section container" aria-labelledby="contact-title">
-		<SectionHead id="contact-title" num="03" :title="contact.title" />
+		<SectionHead id="contact-title" num="04" :title="contact.title" />
 
 		<HidingStache id="horseshoe" from="left" at="34%" :size="124">
 			<div class="card">
@@ -21,9 +21,11 @@ import { profile, contact } from '../content.js'
 						rel="noopener"
 					>
 						{{ contact.linkedin }} <span aria-hidden="true">↗</span>
+						<span class="visually-hidden">{{ contact.newTab }}</span>
 					</a>
 					<a v-if="profile.github" class="btn btn-inverse-ghost" :href="profile.github" target="_blank" rel="noopener">
 						{{ contact.github }} <span aria-hidden="true">↗</span>
+						<span class="visually-hidden">{{ contact.newTab }}</span>
 					</a>
 				</div>
 			</div>
@@ -39,6 +41,7 @@ import { profile, contact } from '../content.js'
 	border-radius: 24px;
 	background: var(--card);
 	color: var(--on-card);
+	--focus: var(--on-card);
 }
 
 .line {

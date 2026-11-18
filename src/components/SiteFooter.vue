@@ -1,6 +1,7 @@
 <script setup>
 import NappingStache from './NappingStache.vue'
 import { profile, footer } from '../content.js'
+import { reducedMotion, setReducedMotion } from '../composables/media.js'
 
 const year = new Date().getFullYear()
 </script>
@@ -12,6 +13,16 @@ const year = new Date().getFullYear()
 				<NappingStache id="walrus" class="nap" />
 				<p>© {{ year }} {{ profile.firstName }} {{ profile.lastName }}</p>
 				<p class="small">{{ footer.note }}</p>
+				<!-- Stills every blink, breath and wiggle on the page. Starts from the system setting. -->
+				<button
+					type="button"
+					class="motion"
+					:aria-pressed="reducedMotion ? 'true' : 'false'"
+					@click="setReducedMotion(!reducedMotion)"
+				>
+					<span class="switch" aria-hidden="true"><span class="knob" /></span>
+					{{ footer.motion }}
+				</button>
 			</div>
 		</div>
 	</footer>
@@ -26,6 +37,7 @@ const year = new Date().getFullYear()
 	position: relative;
 	display: flex;
 	flex-wrap: wrap;
+	align-items: center;
 	justify-content: space-between;
 	gap: 8px 24px;
 	padding-block: 28px 44px;
@@ -47,5 +59,60 @@ const year = new Date().getFullYear()
 	top: 0;
 	right: clamp(8px, 10vw, 140px);
 	transform: translateY(calc(-100% + 6px));
+}
+
+.motion {
+	all: unset;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 32px;
+	padding: 4px 2px;
+	font-size: 0.95rem;
+	color: var(--ink);
+	cursor: pointer;
+	border-radius: 8px;
+}
+
+.motion:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 3px;
+}
+
+/* A little switch: outlined when off, filled with the knob across when on */
+.switch {
+	position: relative;
+	flex: none;
+	width: 36px;
+	height: 20px;
+	border: 1.5px solid var(--ink);
+	border-radius: 999px;
+	transition: background-color 160ms;
+}
+
+.knob {
+	position: absolute;
+	top: 2.5px;
+	left: 3px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--ink);
+	transition: transform 160ms;
+}
+
+.motion[aria-pressed='true'] .switch {
+	background: var(--ink);
+}
+
+.motion[aria-pressed='true'] .knob {
+	background: var(--paper);
+	transform: translateX(15px);
+}
+
+:root.reduce-motion .switch,
+:root.reduce-motion .knob {
+	transition: none;
 }
 </style>
