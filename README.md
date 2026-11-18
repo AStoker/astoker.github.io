@@ -160,7 +160,7 @@ true)` makes the window narrow. `src/test/setup.ts` puts everything back after e
 
 ## Deploying
 
-`.github/workflows/deploy.yml` runs the tests, then builds and publishes on every push to
-`main`. A failing test stops the deploy. `.github/workflows/test.yml` runs the tests on every
-pull request.
+`.github/workflows/deploy.yml` checks the types, runs the tests, then builds and publishes on
+every push to `main`. A type error or failing test stops the deploy. `.github/workflows/test.yml`
+does the same checks on every pull request.
 One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.

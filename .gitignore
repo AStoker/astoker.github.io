@@ -6,3 +6,4 @@ Thumbs.db
 .vscode
 package-lock.json
 coverage
+.claude/launch.json
