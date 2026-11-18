@@ -43,6 +43,9 @@ const teeth = Array.from({ length: 13 }, (_, i) => {
 	return `L${x} 22 L${x - 3} 25.5`
 }).join(' ')
 const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
+
+// The cone of light under the shade. Things inside it get their colors back.
+const beam = 'M150 78 L210 78 L294 204 L66 204 Z'
 </script>
 
 <template>
@@ -60,12 +63,15 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 					<stop offset="0" stop-color="#fff0c8" />
 					<stop offset="1" stop-color="#ffd27e" stop-opacity="0.82" />
 				</linearGradient>
+				<clipPath id="ws-beam-clip">
+					<path :d="beam" />
+				</clipPath>
 			</defs>
 
 			<!-- The wall, and the glow when the lamp is on -->
 			<rect width="360" height="200" fill="url(#ws-peg)" />
 			<rect class="glow" width="360" height="240" fill="url(#ws-wall)" />
-			<path class="glow" d="M150 78 L210 78 L294 204 L66 204 Z" fill="url(#ws-beam)" />
+			<path class="glow" :d="beam" fill="url(#ws-beam)" />
 
 			<!-- Woodworking: a saw hanging on the pegboard -->
 			<g class="thing" transform="translate(268 30) rotate(9)">
@@ -80,36 +86,53 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 			<rect class="shelf" x="16" y="200" width="328" height="8" rx="2" />
 			<path class="shelf" d="M48 208 H60 L48 226 Z M300 208 H312 L312 226 Z" />
 
-			<!-- Pottery and gardening: a vase with something growing in it -->
-			<g class="thing">
-				<path class="stem" d="M78 132 C78 120 77 110 79 98" />
-				<path d="M78 121 C71 114 62 115 58 121 C64 127 72 127 78 121 Z" />
-				<path d="M78.5 112 C85 104 95 104 99 109 C93 116 84 117 78.5 112 Z" />
-				<path d="M79 99 C75 92 77 84 83 80 C86 87 85 95 79 99 Z" />
-				<path d="M64 200 C55 186 53 168 64 156 C70 149 70 143 66 137 L90 137 C86 143 86 149 92 156 C103 168 101 186 92 200 Z" />
-				<rect x="62" y="131" width="32" height="7" rx="2.5" />
-			</g>
+			<!-- The vase and the multimeter, drawn twice: once in the dark, and again in
+			     their real colors, clipped to the beam, so only what the lamp reaches lights up. -->
+			<g
+				v-for="layer in ['dark', 'lamplight']"
+				:key="layer"
+				:class="layer === 'lamplight' && 'glow lamplight'"
+				:clip-path="layer === 'lamplight' ? 'url(#ws-beam-clip)' : undefined"
+			>
+				<!-- Pottery and gardening: a vase with something growing in it -->
+				<g class="thing">
+					<g class="plant">
+						<path class="stem" d="M78 132 C78 120 77 110 79 98" />
+						<path d="M78 121 C71 114 62 115 58 121 C64 127 72 127 78 121 Z" />
+						<path d="M78.5 112 C85 104 95 104 99 109 C93 116 84 117 78.5 112 Z" />
+						<path d="M79 99 C75 92 77 84 83 80 C86 87 85 95 79 99 Z" />
+					</g>
+					<g class="vase">
+						<path d="M64 200 C55 186 53 168 64 156 C70 149 70 143 66 137 L90 137 C86 143 86 149 92 156 C103 168 101 186 92 200 Z" />
+						<rect x="62" y="131" width="32" height="7" rx="2.5" />
+					</g>
+				</g>
 
-			<!-- Electronics: a multimeter with its probes trailing off the shelf -->
-			<g class="thing">
-				<rect x="262" y="146" width="40" height="54" rx="6" />
-				<path class="cable" d="M272 196 C268 212 258 216 256 232 M292 196 C298 210 308 216 306 234" />
+				<!-- Electronics: a multimeter with its probes trailing off the shelf -->
+				<g class="thing">
+					<rect class="meter" x="262" y="146" width="40" height="54" rx="6" />
+					<path class="cable" d="M272 196 C268 212 258 216 256 232 M292 196 C298 210 308 216 306 234" />
+				</g>
 			</g>
 			<rect class="detail" x="268" y="152" width="28" height="13" rx="2" />
 			<circle class="detail-line" cx="282" cy="181" r="8.5" />
 			<path class="detail-line" d="M282 181 L287.5 175" />
 
-			<!-- The lamp: click it, or pull the cord -->
-			<g class="lamp" @click="pull">
-				<line class="hanger" x1="180" y1="0" x2="180" y2="45" />
-				<path class="shade" d="M148 78 Q150 47 180 45 Q210 47 212 78 Z" />
-				<ellipse class="bulb" cx="180" cy="79" rx="13" ry="6" />
-			</g>
+			<!-- The cord comes out from under the shade, so it's drawn first and starts
+			     high enough that a tug never shows its end below the rim. -->
 			<g class="pull" :class="{ tugging }">
-				<line x1="204" y1="72" x2="204" y2="112" />
+				<line x1="204" y1="62" x2="204" y2="112" />
 				<circle cx="204" cy="115.5" r="4" />
 				<rect x="191" y="121" width="26" height="15" rx="3.5" />
 				<text x="204" y="131.6" text-anchor="middle">{{ offClock.lampTag }}</text>
+			</g>
+
+			<!-- The lamp: click it, or pull the cord -->
+			<g class="lamp" @click="pull">
+				<line class="hanger" x1="180" y1="0" x2="180" y2="45" />
+				<!-- The bulb sits inside the shade, so only its bottom half peeks out under the rim -->
+				<ellipse class="bulb" cx="180" cy="79" rx="13" ry="6" />
+				<path class="shade" d="M148 78 Q150 47 180 45 Q210 47 212 78 Z" />
 			</g>
 		</svg>
 
@@ -179,6 +202,23 @@ const sawBlade = `M0 0 L78 8 ${teeth} L0 22 Z`
 	stroke: #36322c;
 	stroke-width: 2.4;
 	stroke-linecap: round;
+}
+
+/* Their colors in the lamplight: terracotta, a green plant, a yellow meter */
+.lamplight .vase {
+	fill: #a8693f;
+}
+
+.lamplight .plant {
+	fill: #6f8a4f;
+}
+
+.lamplight .stem {
+	stroke: #6f8a4f;
+}
+
+.lamplight .meter {
+	fill: #d9a531;
 }
 
 .detail {
