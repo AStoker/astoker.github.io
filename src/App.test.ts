@@ -7,6 +7,7 @@ import DwellPeeker from './components/DwellPeeker.vue'
 import WorkshopLamp from './components/WorkshopLamp.vue'
 import NappingStache from './components/NappingStache.vue'
 import { cousins, sections } from './content'
+import { caseStudies } from './caseStudies'
 
 function mountPage() {
 	return mount(App, { attachTo: document.body })
@@ -25,6 +26,16 @@ describe('the page', () => {
 		const wrapper = mountPage()
 		const onPage = wrapper.findAll('main > section.section').map((s) => s.attributes('id'))
 		expect(onPage).toEqual(sections.map((s) => s.id))
+	})
+
+	it('shows each case study as a card linking to its page, then placeholders', () => {
+		const wrapper = mountPage()
+		const slots = wrapper.findAll('#work .slots > li')
+		expect(slots.length).toBe(Math.max(3, caseStudies.length))
+		caseStudies.forEach((study, i) => {
+			expect(slots[i]?.find('.card h3 a').attributes('href')).toBe(`/work/${study.slug}/`)
+		})
+		for (const slot of slots.slice(caseStudies.length)) expect(slot.find('.slot').exists()).toBe(true)
 	})
 
 	it('starts with a skip link to the main content', () => {

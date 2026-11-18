@@ -19,6 +19,8 @@ yarn coverage    # the tests, plus a report of what they cover (in coverage/)
 | Every word on the site, the list of sections, and the list of cousins | `src/content.ts` |
 | What a cousin, a section or a mood is allowed to be | `src/types.ts` |
 | My resume | `public/andrew-stoker-resume.pdf` (when I replace it, I update the size in `resume` in `content.ts` too) |
+| My case studies | `src/caseStudies/` (one file each), their pictures in `public/work/<slug>/` |
+| A case study's page, and its card in Work | `src/components/CaseStudyPage.vue`, `src/components/CaseStudyCard.vue` |
 | Colours, fonts, buttons | `src/styles/main.css` |
 | The mustache shapes | `tools/generate-mustache.ts` (run it to regenerate `src/assets/mustaches.ts`) |
 | Test helpers and the fake browser APIs | `src/test/` |
@@ -38,6 +40,36 @@ The page's sections are listed in `sections` at the bottom of `content.ts`. Each
 `id` (what the menu links to), a `title`, and a `menu` label. Its number (01, 02…) comes
 from its place in that list, so to add or reorder a section I only change the list and
 wrap the new component in `<PageSection :section="…">`.
+
+## Case studies
+
+Each case study is one file in `src/caseStudies/`, listed in order in `src/caseStudies/index.ts`.
+It shows up as a card in Work (placeholders fill the rest of the three spots) and gets its own
+page at `/work/<slug>/`.
+
+They all follow the same outline, so they read the same way. The shape is in
+`src/caseStudies/types.ts`; hover over a field for what it's for. The story goes:
+
+1. **The goal**: what I set out to make, and for whom.
+2. **Decisions**: the calls that shaped it, each with what I gave up for it. Numbered on the page.
+3. **The hard part** and **How I worked** (both optional): a problem I cracked, and how I knew it worked.
+4. **What went wrong**, then **The result** (with a few big numbers) and **What's next**.
+
+To add one:
+
+1. Copy `flyIsland.ts`, rename it, and list it in `index.ts`.
+2. Put its pictures in `public/work/<slug>/` as WebP, about 1400 px wide
+   (`cwebp -q 80 -resize 1434 0 shot.png -o shot.webp`), plus a 1200 × 630 `og.jpg` for link
+   previews.
+3. Run `yarn test`. `caseStudies.test.ts` checks the outline's in order, and that every picture
+   exists, has a description and is the size the file says.
+
+My site is one app: `main.ts` looks at the address and shows either my home page or a case
+study. The dev server answers every address with `index.html`, so nothing else is needed there.
+GitHub Pages only serves files that exist, though, so when the site's built,
+`tools/caseStudyPages.ts` writes a copy of `index.html` to `work/<slug>/index.html` for each
+study, with its own title, description and preview picture. Links straight to a case study work,
+and their previews on LinkedIn or Slack show the study, not my home page.
 
 ## The mustaches
 
@@ -153,6 +185,7 @@ in jsdom. Each one sits next to what it tests (`HidingStache.vue` → `HidingSta
 - **`tools/generate-mustache.test.ts`** fails if I change a shape but forget to run the
   generator.
 - **`App.test.ts`** mounts the whole page and checks every cousin is hidden exactly once.
+- **`src/caseStudies/caseStudies.test.ts`** holds every case study to the format (see Case studies).
 
 jsdom has no `IntersectionObserver` or `matchMedia`, so `src/test/browser.ts` fakes them, and
 a test can drive them: `intersect(el)` scrolls something into view, `setMedia(MEDIA.narrow,
