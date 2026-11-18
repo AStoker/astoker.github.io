@@ -19,6 +19,7 @@ export const nav = {
 	label: 'Main', // what screen readers call the menu
 	menu: 'Menu', // the button the links fold into on phones
 	home: 'back to top', // read after my name on the logo link
+	homePage: 'home page', // the same, on a case study's page
 }
 
 export const hero = {
@@ -45,11 +46,37 @@ export const work = {
 	id: 'work',
 	title: 'Work',
 	menu: 'Work',
-	note: 'I’m still writing these up. Check back soon.',
-	slots: 3,
+	note: 'The first one’s written up, and more are on the way.',
+	slots: 3, // the grid always shows at least this many: my case studies, then placeholders
 	slotLabel: 'Case study',
 	slotStatus: 'Coming soon',
+	read: 'Read the case study', // at the bottom of each case study's card
 } satisfies Section & Record<string, unknown>
+
+// The words around each case study's own page. The studies themselves are in src/caseStudies/.
+export const caseStudyPage = {
+	back: 'All my work',
+	tagsLabel: 'Skills', // read out by screen readers, for the list of tags
+	glance: 'At a glance',
+	// The small label above each part of the story. Decisions are numbered: "Decision 2".
+	parts: {
+		goal: 'The goal',
+		decision: 'Decision',
+		challenge: 'The hard part',
+		process: 'How I worked',
+		setback: 'What went wrong',
+		result: 'The result',
+		next: 'What’s next',
+	},
+	tradeoff: 'The trade-off',
+	end: {
+		title: 'Thanks for reading.',
+		body: 'If this is the kind of work you need, I’d love to hear what you’re building.',
+		contact: 'Say hello',
+		next: 'Next case study', // read before the next study's name
+		back: 'Back to my work',
+	},
+}
 
 export const experience = {
 	id: 'experience',

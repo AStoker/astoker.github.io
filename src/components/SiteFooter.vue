@@ -3,6 +3,11 @@ import NappingStache from './NappingStache.vue'
 import { profile, footer } from '../content'
 import { reducedMotion, setReducedMotion } from '../composables/media'
 
+const { walrus = true } = defineProps<{
+	/** The Walrus naps on the footer line. Off on case study pages: the cousins live on my home page. */
+	walrus?: boolean
+}>()
+
 const year = new Date().getFullYear()
 </script>
 
@@ -10,7 +15,7 @@ const year = new Date().getFullYear()
 	<footer id="footer" class="site-footer">
 		<div class="container">
 			<div class="inner">
-				<NappingStache id="walrus" class="nap" />
+				<NappingStache v-if="walrus" id="walrus" class="nap" />
 				<p>© {{ year }} {{ profile.firstName }} {{ profile.lastName }}</p>
 				<p class="small">{{ footer.note }}</p>
 				<!-- Stills every blink, breath and wiggle on the page. Starts from the system setting. -->

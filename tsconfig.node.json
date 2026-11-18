@@ -11,6 +11,7 @@
 		// The tools run straight through Node, which only strips types: no enums or namespaces.
 		"erasableSyntaxOnly": true
 	},
-	"include": ["vite.config.ts", "tools/**/*.ts"],
-	"exclude": ["tools/**/*.test.ts"]
+	// vite.config.ts reads my case studies (plain data) to give each one a page.
+	"include": ["vite.config.ts", "tools/**/*.ts", "src/caseStudies/**/*.ts"],
+	"exclude": ["tools/**/*.test.ts", "src/**/*.test.ts"]
 }

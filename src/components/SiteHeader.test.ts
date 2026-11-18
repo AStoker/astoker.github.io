@@ -18,10 +18,10 @@ beforeEach(async () => {
 	hunt = (await import('../composables/stacheHunt')).hunt
 })
 
-function mountHeader() {
+function mountHeader(props: { home?: string; here?: 'work' } = {}) {
 	const host = document.createElement('div')
 	document.body.prepend(host)
-	return mount(SiteHeader, { attachTo: host })
+	return mount(SiteHeader, { props, attachTo: host })
 }
 
 const links = (wrapper: VueWrapper) => wrapper.findAll('#main-nav-links a')
@@ -104,5 +104,21 @@ describe('the cousin counter', () => {
 		hunt.cousins.forEach((c) => hunt.find(c.id))
 		await wait(0)
 		expect(wrapper.find('.hunt').classes()).toContain('done')
+	})
+})
+
+describe('on a case study’s page', () => {
+	it('links back to my home page’s sections, and to my home page from my name', () => {
+		const wrapper = mountHeader({ home: '/', here: 'work' })
+		expect(links(wrapper).map((a) => a.attributes('href'))).toEqual(['/#work', '/#experience', '/#about', '/#contact'])
+		expect(wrapper.find('.brand').attributes('href')).toBe('/')
+		expect(wrapper.find('.brand').attributes('aria-label')).toBe('Andrew Stoker, home page')
+		expect(wrapper.find('.hunt').attributes('href')).toBe('/#family')
+	})
+
+	it('puts the little mustache under the section the page belongs to', async () => {
+		const wrapper = mountHeader({ home: '/', here: 'work' })
+		await wait(0)
+		expect(wrapper.find('.indicator').classes()).toContain('show')
 	})
 })

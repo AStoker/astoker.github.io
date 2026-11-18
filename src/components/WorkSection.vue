@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import PageSection from './PageSection.vue'
+import CaseStudyCard from './CaseStudyCard.vue'
 import CaseStudySlot from './CaseStudySlot.vue'
 import HidingStache from './HidingStache.vue'
 import { work } from '../content'
+import { caseStudies } from '../caseStudies'
 
-const slots = Array.from({ length: work.slots }, (_, i) => String(i + 1).padStart(2, '0'))
-// The case study the Handlebar hides behind
+// My case studies first, then placeholders until there are at least `work.slots`.
+const slots = Array.from({ length: Math.max(work.slots, caseStudies.length) }, (_, i) => ({
+	num: String(i + 1).padStart(2, '0'),
+	study: caseStudies[i],
+}))
+// The spot the Handlebar hides behind
 const HANDLEBAR_SLOT = '02'
 </script>
 
@@ -14,10 +20,12 @@ const HANDLEBAR_SLOT = '02'
 		<template #note><p>{{ work.note }}</p></template>
 
 		<ul class="slots">
-			<li v-for="num in slots" :key="num">
+			<li v-for="{ num, study } in slots" :key="num">
 				<HidingStache v-if="num === HANDLEBAR_SLOT" id="handlebar" class="hider" from="top" at="68%" :size="132">
-					<CaseStudySlot :num="num" />
+					<CaseStudyCard v-if="study" :study="study" />
+					<CaseStudySlot v-else :num="num" />
 				</HidingStache>
+				<CaseStudyCard v-else-if="study" :study="study" />
 				<CaseStudySlot v-else :num="num" />
 			</li>
 		</ul>

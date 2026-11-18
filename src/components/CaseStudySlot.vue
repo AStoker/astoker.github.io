@@ -23,6 +23,7 @@ defineProps<{
 	flex-direction: column;
 	justify-content: space-between;
 	aspect-ratio: 4 / 5;
+	height: 100%; /* as tall as a case study's card beside it, if that's taller */
 	padding: 18px 20px;
 	border: 1.5px dashed var(--rule-strong);
 	border-radius: 16px;

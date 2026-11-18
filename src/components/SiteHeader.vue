@@ -5,11 +5,19 @@ import { hunt } from '../composables/stacheHunt'
 import { useCurrentSection } from '../composables/currentSection'
 import { useReplay } from '../composables/timers'
 import { profile, nav, sections, huntText } from '../content'
+import type { SectionId } from '../types'
+
+const { home = '', here } = defineProps<{
+	/** Where my home page is, for pages other than it: '/'. Leave out on the home page itself. */
+	home?: string
+	/** On another page, the section it belongs to, which gets the little mustache. */
+	here?: SectionId
+}>()
 
 // A little mustache slides under whichever link you're on (or pointing at).
 const current = useCurrentSection()
 const hovered = ref<string | null>(null)
-const target = computed(() => hovered.value ?? current.value)
+const target = computed(() => hovered.value ?? here ?? current.value)
 const linkEls: Record<string, HTMLElement> = {}
 const indicator = reactive({ x: 0, show: false })
 
@@ -69,6 +77,12 @@ onMounted(() => {
 	window.addEventListener('resize', placeIndicator)
 	document.addEventListener('pointerdown', onDocPointer)
 	onScroll()
+	// On another page the mustache starts under its section, so place it now, and again once
+	// the fonts have loaded and the links have their real widths.
+	if (here) {
+		placeIndicator()
+		document.fonts?.ready.then(placeIndicator)
+	}
 })
 
 onBeforeUnmount(() => {
@@ -81,7 +95,11 @@ onBeforeUnmount(() => {
 <template>
 	<header class="site-header" :class="{ scrolled }">
 		<div class="container inner">
-			<a class="brand" href="#top" :aria-label="`${profile.firstName} ${profile.lastName}, ${nav.home}`">
+			<a
+				class="brand"
+				:href="home || '#top'"
+				:aria-label="`${profile.firstName} ${profile.lastName}, ${home ? nav.homePage : nav.home}`"
+			>
 				<MustacheIcon class="brand-mark" />
 				<span class="brand-name">{{ profile.firstName }} {{ profile.lastName }}</span>
 			</a>
@@ -109,7 +127,7 @@ onBeforeUnmount(() => {
 					<li v-for="section in sections" :key="section.id">
 						<a
 							:ref="linkRef(section.id)"
-							:href="`#${section.id}`"
+							:href="`${home}#${section.id}`"
 							:aria-current="current === section.id ? 'location' : undefined"
 							@pointerenter="hovered = section.id"
 							@focus="hovered = section.id"
@@ -129,7 +147,7 @@ onBeforeUnmount(() => {
 			<a
 				class="hunt"
 				:class="{ bump, done: hunt.complete }"
-				href="#family"
+				:href="`${home}#family`"
 				:title="`${huntText.counter}: ${hunt.count} of ${hunt.total}`"
 			>
 				<MustacheIcon class="hunt-icon" kind="handlebar" />
