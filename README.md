@@ -32,6 +32,7 @@ yarn coverage    # the tests, plus a report of what they cover (in coverage/)
 | Which section is in the middle of the screen | `src/composables/currentSection.ts` |
 | Timeouts that clean up after themselves | `src/composables/timers.ts` |
 | Reduced motion (system setting plus the footer switch) | `src/composables/media.ts` |
+| Microsoft Clarity (heatmaps, recordings, errors; no cookies, live site only) | `src/composables/tracking.ts`, with the footer note in `tracking` in `src/content.ts` |
 | My mustache and note in the browser's developer console | `src/devConsole.ts` (art) and `devConsole` in `src/content.ts` (words) |
 
 ## Sections
