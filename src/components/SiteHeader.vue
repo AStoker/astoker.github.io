@@ -153,6 +153,7 @@ onBeforeUnmount(() => {
 				<MustacheIcon class="hunt-icon" kind="handlebar" />
 				<span class="visually-hidden">{{ huntText.counter }}:</span>
 				<span>{{ hunt.count }}/{{ hunt.total }}</span>
+				<span class="hunt-word" aria-hidden="true">{{ huntText.counterWord }}</span>
 			</a>
 		</div>
 	</header>
@@ -274,6 +275,12 @@ onBeforeUnmount(() => {
 .hunt-icon {
 	width: 22px;
 	color: var(--red);
+}
+
+/* "found" after the count, so it reads as a score and not just a number */
+.hunt-word {
+	margin-left: -2px;
+	font-weight: 500;
 }
 
 .hunt.bump {

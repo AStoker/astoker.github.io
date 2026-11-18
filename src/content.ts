@@ -205,13 +205,15 @@ export const sections: readonly Section[] = [work, experience, about, contact]
 
 // The portrait wall in the hero. `me` is the big frame; each cousin gets a small one.
 export const family = {
-	intro: 'The big one’s my mustache. Its five cousins are hiding somewhere on this page.',
+	// In bold, so nobody mistakes the wall for a chart of mustache styles. It's a hunt.
+	intro: 'My mustache’s five cousins are hiding on this page. Can you find them?',
 	prompt: { hover: 'Hover over a frame for a clue.', touch: 'Tap a frame for a clue.' },
 	me: { kind: 'chevron' as const, name: 'Me', label: 'Me: my mustache. Click to make it twirl.' },
 	title: 'The mustache family', // read out by screen readers only
 	meHello: 'That’s me. Well, my mustache. Go on, give it a click.',
 	found: 'Found!',
 	hiding: 'Still hiding',
+	hidingTag: 'Hiding', // on each empty frame, in place of its name until it's found (short, to fit at 320px)
 	done: 'You found all five. Everyone’s home now.', // the caption once the hunt is over
 }
 
@@ -264,7 +266,8 @@ export const cousins: readonly Cousin[] = [
 ]
 
 export const huntText = {
-	counter: 'Cousins found',
+	counter: 'Cousins found', // read out by screen readers, before the count
+	counterWord: 'found', // shown after the count in the header: "0/5 found"
 	foundOne: (name: string) => `You found ${name}!`,
 	labelFound: 'You already found this one. Click to make it twirl.',
 	allTitle: 'You found all five!',
