@@ -214,6 +214,18 @@ export const hunt = {
 	close: 'Close',
 }
 
+// The note for anyone who opens the browser's developer console.
+export const devConsole = {
+	hello: 'Curious one, aren’t you?',
+	hunt: (count, names) => `${count} mustaches are hiding on this page: ${names}.`,
+	pitch: 'I like the way you think.',
+	body: 'If you’re the kind of person who opens the console on someone’s portfolio, I have a feeling we’d work well together. I’d love to hear what you’re building.',
+	email: 'Email',
+	linkedin: 'LinkedIn',
+	source: 'This site’s source',
+	sourceUrl: 'https://github.com/AStoker/astoker.github.io',
+}
+
 export const footer = {
 	note: 'Built with Vue and a little mustache wax.',
 	motion: 'Reduce motion', // the switch that stills every animation on the page

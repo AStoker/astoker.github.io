@@ -20,6 +20,7 @@ yarn build       # production build in dist/
 | The portrait wall in the hero | `src/components/StacheFamily.vue` |
 | Which cousins have been found | `src/composables/stacheHunt.js` |
 | Reduced motion (system setting plus the footer switch) | `src/composables/media.js` |
+| The mustache and note in the browser's developer console | `src/main.js` (art) and `devConsole` in `src/content.js` (words) |
 
 ## The mustaches
 
