@@ -69,12 +69,14 @@ body {
 	text-rendering: optimizeLegibility;
 }
 
-/* A whisper of paper grain */
+/* A whisper of paper grain. It stays below the header (z-index 50): iOS Safari tints the
+   strip behind the status bar with the colour of the bar at the top of the page, and a
+   full-window layer on top of the header hides it, so the page would show through there. */
 body::after {
 	content: '';
 	position: fixed;
 	inset: 0;
-	z-index: 100;
+	z-index: 45;
 	pointer-events: none;
 	opacity: 0.045;
 	mix-blend-mode: multiply;
