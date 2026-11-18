@@ -88,12 +88,6 @@ export const experience = {
 			body: 'Eight years and three titles, from developer to UI Architect. Along the way I moved us from TFVC to Git, built our pipelines in Azure DevOps, led the work to put every app on one accessible UI framework, and ran training sessions for the whole company.',
 			tags: ['Architecture', 'Accessibility', 'CI/CD'],
 		},
-		{
-			title: 'I design it, then I build it',
-			where: 'Computer science, with a minor in graphic design',
-			body: 'I’m as happy in Figma or Illustrator as I am in the code. I talk with the people who’ll use the thing, make the mockups and prototypes, then build what we drew. Fewer handoffs, fewer surprises.',
-			tags: ['Design', 'Prototyping', 'User research'],
-		},
 	],
 
 	// Everything that isn't software. `atWork` is what it brings back to the day job.
