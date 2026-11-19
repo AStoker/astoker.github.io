@@ -19,7 +19,7 @@ function observeSections() {
 /**
  * The id of the section in the middle of the screen, or null between sections. "In the
  * middle" means it covers a thin band just under halfway down the window. The header uses
- * it to mark where you are; the Pencil uses it to know you've stayed.
+ * it to mark where you are.
  *
  * Covers every `<section id>` directly inside `<main>`, the hero (`top`) included.
  * One observer serves the whole page, started by the first component that asks once it's

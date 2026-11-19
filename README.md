@@ -94,7 +94,7 @@ each time; nothing is random.
 | --- | --- | --- |
 | The Handlebar | Behind the second case study | Its eyebrows always poke over the top. Hover over the card (or tap it) and it pops up. |
 | The Dalí | On my workbench shelf, in Experience | Only its eyes show in the dark. Pull the lamp cord (or click the lamp) and there it is. |
-| The Pencil | Bottom corner of the window, in About | Stay in About and it rises slowly, fully up after three seconds. Leave and it ducks down, out of sight (it's clipped, so it can't show through iOS Safari's see-through toolbar). |
+| The Pencil | On the top line of my facts in About, above "Columbia, SC" | Keep that line on screen and it rises slowly over it, fully up after three seconds. Scroll it away and it ducks back under (it's clipped at the line, so nothing shows while it's down). |
 | The Horseshoe | Behind the dark card in Say hello | A whisker always pokes out. Hover over the card (or tap it) and it leans out. |
 | The Walrus | On the footer line | Always there, asleep. Click to wake it. |
 
@@ -144,8 +144,8 @@ how the cousin hides.
 
 I aim for WCAG 2.2 AA, checked with axe in light and dark mode and at 320px wide.
 
-- Everything works with the keyboard, including the hunt. The Pencil lives inside About in
-  the page, so it's next in the tab order while it's up.
+- Everything works with the keyboard, including the hunt. The Pencil sits just before my
+  facts in About, so it's next in the tab order while it's up.
 - Motion follows the system's reduced-motion setting, and the **Reduce motion** switch in my
   footer stills every blink, breath and wiggle (WCAG 2.2.2). Components hook in with
   `:root.reduce-motion .thing { ... }` in CSS or `reducedMotion` from `composables/media.ts`.
