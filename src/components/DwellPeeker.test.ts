@@ -1,35 +1,37 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { intersect } from '../test/browser'
-import { useFakeClock, wait, press, byId } from '../test/helpers'
+import DwellPeeker from './DwellPeeker.vue'
+import { hunt } from '../composables/stacheHunt'
+import { setReducedMotion } from '../composables/media'
+import { intersect, observing } from '../test/browser'
+import { useFakeClock, wait, press } from '../test/helpers'
 
-// The Pencil watches which section is on screen, and that tracker is shared by the whole
-// page. So each test gets fresh copies of everything, on a page with two sections.
-let DwellPeeker: typeof import('./DwellPeeker.vue').default
-let hunt: typeof import('../composables/stacheHunt').hunt
-let setReducedMotion: typeof import('../composables/media').setReducedMotion
-
-beforeEach(async () => {
-	useFakeClock()
-	document.body.innerHTML = '<main><section id="work"></section><section id="about"></section></main>'
-	vi.resetModules()
-	DwellPeeker = (await import('./DwellPeeker.vue')).default
-	hunt = (await import('../composables/stacheHunt')).hunt
-	setReducedMotion = (await import('../composables/media')).setReducedMotion
-})
-
-const section = byId
-
-function mountPencil() {
-	const host = document.createElement('div')
-	section('about').append(host)
-	return mount(DwellPeeker, { props: { id: 'pencil', section: 'about', seconds: 3 }, attachTo: host })
+function mountPencil(props = {}) {
+	return mount(DwellPeeker, {
+		props: { id: 'pencil', seconds: 3, ...props },
+		slots: { default: '<dl class="facts"><div><dt>Based in</dt><dd>Columbia, SC</dd></div></dl>' },
+		attachTo: document.body,
+	})
 }
 
-const isUp = (wrapper: VueWrapper) => wrapper.find('.dweller').classes('up')
+const spot = (wrapper: VueWrapper) => wrapper.find('.dweller')
+const isUp = (wrapper: VueWrapper) => spot(wrapper).classes('up')
+
+// The space it rises into scrolls fully into view (or partly, or out).
+const onScreen = (wrapper: VueWrapper, intersectionRatio = 1) =>
+	intersect(spot(wrapper).element, { isIntersecting: intersectionRatio > 0, intersectionRatio })
+
+beforeEach(useFakeClock)
 
 describe('DwellPeeker', () => {
-	it('stays out of sight, and out of the tab order, until you’re in its section', () => {
+	it('sits on the top edge of whatever it’s given, where I put it', () => {
+		const wrapper = mountPencil({ at: '80%' })
+		expect(wrapper.find('.facts').text()).toContain('Columbia, SC')
+		expect(wrapper.find('.ledge').attributes('style')).toContain('--at: 80%')
+		expect(observing(spot(wrapper).element)).toBe(true)
+	})
+
+	it('stays out of sight, and out of the tab order, until its edge is on screen', () => {
 		const wrapper = mountPencil()
 		const button = wrapper.find('.peeker')
 		expect(isUp(wrapper)).toBe(false)
@@ -37,27 +39,27 @@ describe('DwellPeeker', () => {
 		expect(button.attributes('aria-hidden')).toBe('true')
 	})
 
-	it('rises while its section is in the middle of the screen, taking `seconds` to get there', async () => {
+	it('rises once the space above its edge is fully on screen, taking `seconds` to get there', async () => {
 		const wrapper = mountPencil()
-		intersect(section('about'))
+		onScreen(wrapper)
 		await wait(0)
 		expect(isUp(wrapper)).toBe(true)
-		expect(wrapper.find('.dweller').attributes('style')).toContain('--rise: 3s')
+		expect(wrapper.find('.ledge').attributes('style')).toContain('--rise: 3s')
 		expect(wrapper.find('.peeker').attributes('tabindex')).toBe('0')
 	})
 
-	it('ignores other sections', async () => {
+	it('waits while it’s only partly on screen, say under my header', async () => {
 		const wrapper = mountPencil()
-		intersect(section('work'))
+		onScreen(wrapper, 0.5)
 		await wait(0)
 		expect(isUp(wrapper)).toBe(false)
 	})
 
 	it('ducks straight back down when you scroll away', async () => {
 		const wrapper = mountPencil()
-		intersect(section('about'))
+		onScreen(wrapper)
 		await wait(0)
-		intersect(section('about'), { isIntersecting: false })
+		onScreen(wrapper, 0)
 		await wait(0)
 		expect(isUp(wrapper)).toBe(false)
 	})
@@ -65,9 +67,9 @@ describe('DwellPeeker', () => {
 	it('with motion reduced, waits the whole time and then simply appears', async () => {
 		setReducedMotion(true)
 		const wrapper = mountPencil()
-		intersect(section('about'))
+		onScreen(wrapper)
 		await wait(2900)
-		expect(isUp(wrapper)).toBe(false)
+		onScreen(wrapper) // still there; this mustn't start the wait over
 		await wait(100)
 		expect(isUp(wrapper)).toBe(true)
 	})
@@ -75,16 +77,16 @@ describe('DwellPeeker', () => {
 	it('with motion reduced, leaving before the time is up cancels it', async () => {
 		setReducedMotion(true)
 		const wrapper = mountPencil()
-		intersect(section('about'))
+		onScreen(wrapper)
 		await wait(1000)
-		intersect(section('about'), { isIntersecting: false })
+		onScreen(wrapper, 0)
 		await wait(5000)
 		expect(isUp(wrapper)).toBe(false)
 	})
 
 	it('clicking it finds it', async () => {
 		const wrapper = mountPencil()
-		intersect(section('about'))
+		onScreen(wrapper)
 		await wait(0)
 		await press(wrapper.find('.peeker'))
 		expect(hunt.isFound('pencil')).toBe(true)

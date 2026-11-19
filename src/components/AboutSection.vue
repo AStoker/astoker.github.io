@@ -11,16 +11,17 @@ import { about } from '../content'
 			<p class="statement">{{ about.statement }}</p>
 			<div>
 				<p v-for="paragraph in about.body" :key="paragraph" class="body">{{ paragraph }}</p>
-				<dl class="facts">
-					<div v-for="fact in about.facts" :key="fact.label" class="fact">
-						<dt>{{ fact.label }}</dt>
-						<dd>{{ fact.value }}</dd>
-					</div>
-				</dl>
+				<!-- The Pencil comes up over the facts' top line, above "Columbia, SC", if you stay a while -->
+				<DwellPeeker id="pencil" class="facts-ledge" at="80%" :seconds="3">
+					<dl class="facts">
+						<div v-for="fact in about.facts" :key="fact.label" class="fact">
+							<dt>{{ fact.label }}</dt>
+							<dd>{{ fact.value }}</dd>
+						</div>
+					</dl>
+				</DwellPeeker>
 			</div>
 		</div>
-
-		<DwellPeeker id="pencil" :section="about.id" :seconds="3" />
 	</PageSection>
 </template>
 
@@ -53,8 +54,13 @@ import { about } from '../content'
 	color: var(--ink);
 }
 
+/* Room above the facts for the Pencil to come up into (it's 56px tall), clear of the text above */
+.facts-ledge {
+	margin-top: 60px;
+}
+
 .facts {
-	margin: 28px 0 0;
+	margin: 0;
 	border-top: 1px solid var(--rule);
 }
 
